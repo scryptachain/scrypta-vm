@@ -3,15 +3,26 @@ const { NodeVM } = require('vm2')
 async function compiler(code){
     return new Promise(response => {
         let compiled = `
-            const ScryptaCore = require('@scrypta/core');
-            let scrypta = new ScryptaCore;
-            scrypta.staticnodes = true;
+            const ScryptaCore = require('@scrypta/core')
+            let scrypta = new ScryptaCore
+            scrypta.staticnodes = true
             scrypta.mainnetIdaNodes = ['http://localhost:3001']
             scrypta.testnetIdaNodes = ['http://localhost:3001']
         `
         compiled += code
-        compiled += '\nconstructor()'
-        response(compiled)
+        let functions = code.match(/(?<=function )(.*?)(?=\s*\()/gi)
+        if(functions.length > 1){
+            for(let k in functions){
+                let fn = functions[k]
+                if(fn !== 'constructor'){
+                    compiled += '\nmodule.exports.helloworld = ' + fn
+                }
+            }
+            compiled += '\nconstructor()'
+            response(compiled)
+        }else{
+            response(false)
+        }
     })
 }
 
@@ -19,7 +30,7 @@ function prepare(toCompile){
     return new Promise(async response => {
         try{
             let compiled = await compiler(toCompile.toString().trim())
-            if(compiled.indexOf('while') === -1){
+            if(compiled !== false && compiled.indexOf('while') === -1){
                 let vm = new NodeVM({
                     console: 'inherit',
                     sandbox: {},

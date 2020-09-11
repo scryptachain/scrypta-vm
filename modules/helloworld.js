@@ -11,7 +11,7 @@ async function constructor() {
 function helloworld(who) {
     return new Promise(async response => {
         console.log('Module running at ' + time)
-        
+
         if (who !== undefined && who.length > 0) {
             console.log('Hello ' + who + '!')
         } else {
@@ -21,5 +21,3 @@ function helloworld(who) {
         response('Seems all ok.')
     })
 }
-
-module.exports.helloworld = helloworld
