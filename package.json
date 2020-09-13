@@ -2,9 +2,9 @@
   "name": "scrypta-vm",
   "version": "1.0.0",
   "description": "Scrypta experiment with Virtual Machines",
-  "main": "index.js",
+  "main": "svm.js",
   "scripts": {
-    "dev": "nodemon . --ignore 'db/*' "
+    "dev": "nodemon index.js --ignore 'db/*' "
   },
   "author": "Scrypta Task Force",
   "license": "MIT",
