@@ -20,7 +20,7 @@ Dopo un'attenta analisi delle varie piattaforme di Smart Contracts esistenti abb
 
 - **Aggiornabilità:** il sistema deve garantire l'aggiornamento del software pur mantenendo la sua immutabilità.
 
-Riteniamo che il sistema pensato riesca effettivamente a soddisfare tutti i requisiti di cui sopra, nei prossimi paragrafi spiegeremo come.
+Riteniamo che il sistema pensato riesca effettivamente a soddisfare tutti i requisiti di cui sopra, nei prossimi paragrafi spiegheremo come.
 
 ## IdaNodes, VM e compiler
 
@@ -44,9 +44,9 @@ Questo tipo di approccio è già stato usato in applicazioni decentralizzate com
 
 ## Clock e automatismo
 
-L'interazione specifica con gli IdaNode permette di risolvere un altro grande problema riscontrato in altre piattaforme di Smart Contracts ovvero gli automatismi. Sebbene sia generalmente diffusa l'idea che lo Smart Contract "si auto esegue sulla base di specifiche regole" tale idea è drasticamente errata.
+L'interazione specifica con gli IdaNode permette di risolvere un altro grande problema riscontrato in altre piattaforme di Smart Contracts ovvero gli automatismi. Sebbene sia generalmente diffusa l'idea che lo Smart Contract "si auto-esegue sulla base di specifiche regole", tale idea è drasticamente errata.
 
-Facendo l'esempio di Ethereum uno smart contract può eventualmente avere "automaticamente" delle condizioni tali per cui `se` eseguito (e ripetiamo il *se*) porterà ad un cambio di stato all'interno dello stesso.
+Facendo l'esempio di Ethereum, uno Smart Contract può eventualmente avere "automaticamente" delle condizioni tali per cui `se` eseguito (e ripetiamo il *se*), porterà ad un cambio di stato all'interno dello stesso.
 
 Questo perchè la Ethereum Virtual Machine non ha un vero e proprio `clock` ovvero una caratteristica fondamentale di tutte le *macchine* elettroniche e che permette di sincronizzarsi per mezzo di un determinato *ciclo*. Nei computer è calcolato ad esempio in Hertz (GHz) e definisce la quantità eseguire operazioni che il computer può eseguire ogni secondo. 
 
