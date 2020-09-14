@@ -12,6 +12,7 @@ async function publishModule() {
         let author
         let version
         let description
+        let immutable
         let code = fs.readFileSync(argv.m)
         let manifest = code.toString().match(/\/\*(\*(?!\/)|[^*])*\*\//gi)
         manifest = manifest[0].replace('/**', '')
@@ -34,8 +35,8 @@ async function publishModule() {
                 if (definition[0] === 'DESCRIPTION') {
                     description = definition[1].trim()
                 }
-                if (immutable[0] === 'IMMUTABLE') {
-                    immutable = immutable[1].trim()
+                if (definition[0] === 'IMMUTABLE') {
+                    immutable = definition[1].trim()
                 }
             }
         }
@@ -79,8 +80,8 @@ async function publishModule() {
                         console.log('GENESIS EXIST, CHECK IF EXIST VERSION.')
                         let version_check = await scrypta.post('/read', { address: manifest.address, refID: manifest.version, protocol: 'ida://' })
                         if (version_check.data[0] === undefined && genesis.contract.version !== manifest.version) {
-                            console.log('PUBLISHING UPDATE')
-                            if (genesis.contract.immutable === false) {
+                            console.log('PUBLISHING UPDATE ' + manifest.version)
+                            if (genesis.contract.immutable === undefined || genesis.contract.immutable === false) {
                                 let signed = await scrypta.signMessage(identity, JSON.stringify(manifest))
                                 let contractBalance = await scrypta.get('/balance/' + manifest.address)
                                 let funded = false

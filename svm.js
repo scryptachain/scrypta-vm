@@ -2,15 +2,12 @@ const { NodeVM } = require('vm2')
 const compressor = require('lzutf8')
 const ScryptaCore = require('@scrypta/core')
 
-async function compiler(code) {
+async function compiler(code, request = '') {
     return new Promise(response => {
-        let compiled = `
-            const ScryptaCore = require('@scrypta/core')
-            let scrypta = new ScryptaCore
-            scrypta.staticnodes = true
-            scrypta.mainnetIdaNodes = ['http://localhost:3001']
-            scrypta.testnetIdaNodes = ['http://localhost:3001']
-        `
+        let compiled = `const ScryptaCore = require('@scrypta/core');let scrypta = new ScryptaCore;scrypta.staticnodes = true;scrypta.mainnetIdaNodes = ['http://localhost:3001'];scrypta.testnetIdaNodes = ['http://localhost:3001'];`
+        if (request !== '') {
+            compiled += 'const request = ' + JSON.stringify(request) + ';'
+        }
         compiled += code
         let runnable = []
         let functions = code.match(/(?<=function )(.*?)(?=\s*\()/gi)
@@ -33,10 +30,10 @@ async function compiler(code) {
     })
 }
 
-function prepare(toCompile) {
+function prepare(toCompile, request = '') {
     return new Promise(async response => {
         try {
-            let compiled = await compiler(toCompile.toString().trim())
+            let compiled = await compiler(toCompile.toString().trim(), request)
             if (compiled !== false) {
                 let vm = new NodeVM({
                     console: 'inherit',
@@ -67,9 +64,9 @@ function read(address) {
             let genesisindex = contractBlockchain.data.length - 1
             let genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
             let versionindex
-            if(genesis.immutable === undefined || genesis.immutable === false){
+            if (genesis.immutable === undefined || genesis.immutable === false) {
                 versionindex = 0
-            }else{
+            } else {
                 versionindex = genesisindex
             }
             if (contractBlockchain.data[versionindex] !== undefined) {
@@ -98,32 +95,42 @@ function read(address) {
     })
 }
 
-function run(address, functionToCall, paramsToPass) {
+function run(address, request) {
     return new Promise(async response => {
         try {
             let scrypta = new ScryptaCore
             scrypta.staticnodes = true
             scrypta.mainnetIdaNodes = ['http://localhost:3001']
-            let contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
-            let genesisindex = contractBlockchain.data.length - 1
-            let genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
-            let versionindex
-            if(genesis.immutable === undefined || genesis.immutable === false){
-                versionindex = 0
-            }else{
-                versionindex = genesisindex
-            }
-            if (contractBlockchain.data[versionindex] !== undefined) {
-                let data = contractBlockchain.data[versionindex].data
-                let verify = await scrypta.verifyMessage(data.pubkey, data.signature, data.message)
-                let contract = JSON.parse(data.message)
-                if (verify !== false) {
-                    let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
-                    let code = await prepare(toCompile)
-                    if (code !== false) {
-                        if (code[functionToCall] !== undefined) {
-                            let result = await code[functionToCall](paramsToPass)
-                            response(result)
+            let validateRequest = await (scrypta.verifyMessage(request.pubkey, request.signature, request.message))
+            if (validateRequest !== false) {
+                request.message = JSON.parse(request.message)
+                if (request.message.function !== undefined && request.message.params !== undefined) {
+                    let contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
+                    let genesisindex = contractBlockchain.data.length - 1
+                    let genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
+                    let versionindex
+                    if (genesis.immutable === undefined || genesis.immutable === false) {
+                        versionindex = 0
+                    } else {
+                        versionindex = genesisindex
+                    }
+                    if (contractBlockchain.data[versionindex] !== undefined) {
+                        let data = contractBlockchain.data[versionindex].data
+                        let verify = await scrypta.verifyMessage(data.pubkey, data.signature, data.message)
+                        let contract = JSON.parse(data.message)
+                        if (verify !== false) {
+                            let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
+                            let code = await prepare(toCompile, request)
+                            if (code !== false) {
+                                if (code[request.message.function] !== undefined) {
+                                    let result = await code[request.message.function](request.message.params)
+                                    response(result)
+                                } else {
+                                    response(false)
+                                }
+                            } else {
+                                response(false)
+                            }
                         } else {
                             response(false)
                         }

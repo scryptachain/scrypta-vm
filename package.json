@@ -5,7 +5,7 @@
   "main": "svm.js",
   "scripts": {
     "dev": "nodemon index.js --ignore 'db/*'",
-    "pub": "node pub.js -m ida_modules/helloworld.js -i Sqsq34jAHopAJUtAs3j5iV15XqGLZbWNRHFEkH5LA7kGR4s1AHJR"
+    "pub": "node pub.js -m test_contracts/helloworld.js -i Sqsq34jAHopAJUtAs3j5iV15XqGLZbWNRHFEkH5LA7kGR4s1AHJR"
   },
   "author": "Scrypta Task Force",
   "license": "MIT",
