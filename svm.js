@@ -2,7 +2,7 @@ const { NodeVM } = require('vm2')
 const compressor = require('lzutf8')
 const ScryptaCore = require('@scrypta/core')
 
-async function compiler(code, returnCode = true) {
+async function compiler(code) {
     return new Promise(response => {
         let compiled = `
             const ScryptaCore = require('@scrypta/core')
@@ -23,14 +23,10 @@ async function compiler(code, returnCode = true) {
                 }
             }
             compiled += '\nconstructor()'
-            if (returnCode) {
-                response(compiled)
-            } else {
-                response({
-                    functions: runnable,
-                    code: compiled
-                })
-            }
+            response({
+                functions: runnable,
+                code: compiled
+            })
         } else {
             response(false)
         }
@@ -49,7 +45,7 @@ function prepare(toCompile) {
                         external: true
                     }
                 })
-                let mod = vm.run(compiled, 'svm.js')
+                let mod = vm.run(compiled.code, 'svm.js')
                 response(mod)
             } else {
                 response(false)
@@ -67,14 +63,22 @@ function read(address) {
             let scrypta = new ScryptaCore
             scrypta.staticnodes = true
             scrypta.mainnetIdaNodes = ['http://localhost:3001']
-            let module = await scrypta.post('/read', { address: address, protocol: 'ida://' })
-            if (module.data[0] !== undefined) {
-                let data = module.data[0].data
+            let contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
+            let genesisindex = contractBlockchain.data.length - 1
+            let genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
+            let versionindex
+            if(genesis.immutable === undefined || genesis.immutable === false){
+                versionindex = 0
+            }else{
+                versionindex = genesisindex
+            }
+            if (contractBlockchain.data[versionindex] !== undefined) {
+                let data = contractBlockchain.data[versionindex].data
                 let verify = await scrypta.verifyMessage(data.pubkey, data.signature, data.message)
                 let contract = JSON.parse(data.message)
                 if (verify !== false) {
                     let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
-                    let compiled = await compiler(toCompile.toString().trim(), false)
+                    let compiled = await compiler(toCompile.toString().trim())
                     if (compiled !== false) {
                         contract.functions = compiled.functions
                         contract.code = compiled.code
@@ -100,9 +104,17 @@ function run(address, functionToCall, paramsToPass) {
             let scrypta = new ScryptaCore
             scrypta.staticnodes = true
             scrypta.mainnetIdaNodes = ['http://localhost:3001']
-            let module = await scrypta.post('/read', { address: address, protocol: 'ida://' })
-            if (module.data[0] !== undefined) {
-                let data = module.data[0].data
+            let contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
+            let genesisindex = contractBlockchain.data.length - 1
+            let genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
+            let versionindex
+            if(genesis.immutable === undefined || genesis.immutable === false){
+                versionindex = 0
+            }else{
+                versionindex = genesisindex
+            }
+            if (contractBlockchain.data[versionindex] !== undefined) {
+                let data = contractBlockchain.data[versionindex].data
                 let verify = await scrypta.verifyMessage(data.pubkey, data.signature, data.message)
                 let contract = JSON.parse(data.message)
                 if (verify !== false) {

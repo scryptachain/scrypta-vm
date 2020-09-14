@@ -34,6 +34,9 @@ async function publishModule() {
                 if (definition[0] === 'DESCRIPTION') {
                     description = definition[1].trim()
                 }
+                if (immutable[0] === 'IMMUTABLE') {
+                    immutable = immutable[1].trim()
+                }
             }
         }
 
@@ -44,6 +47,7 @@ async function publishModule() {
                 author: author,
                 version: version,
                 description: description,
+                immutable: immutable,
                 code: compressor.compress(code, { outputEncoding: 'Base64' })
             }
             let scrypta = new ScryptaCore
@@ -76,23 +80,27 @@ async function publishModule() {
                         let version_check = await scrypta.post('/read', { address: manifest.address, refID: manifest.version, protocol: 'ida://' })
                         if (version_check.data[0] === undefined && genesis.contract.version !== manifest.version) {
                             console.log('PUBLISHING UPDATE')
-                            let signed = await scrypta.signMessage(identity, JSON.stringify(manifest))
-                            let contractBalance = await scrypta.get('/balance/' + manifest.address)
-                            let funded = false
-                            if (contractBalance.balance < 0.002) {
-                                funded = await fundAddress(manifest.address)
-                            } else {
-                                funded = true
-                            }
-                            if (funded !== false) {
-                                let update_written = await scrypta.write(sid, 'TEMPORARY', JSON.stringify(signed), '', manifest.version, 'ida://')
-                                if (update_written.uuid !== undefined && update_written.txs !== undefined && update_written.txs.length > 0) {
-                                    console.log('UPDATE TRANSACTION WRITTEN CORRECTLY')
+                            if (genesis.contract.immutable === false) {
+                                let signed = await scrypta.signMessage(identity, JSON.stringify(manifest))
+                                let contractBalance = await scrypta.get('/balance/' + manifest.address)
+                                let funded = false
+                                if (contractBalance.balance < 0.002) {
+                                    funded = await fundAddress(manifest.address)
                                 } else {
-                                    console.error('ERROR WHILE CREATING TRANSACTION')
+                                    funded = true
+                                }
+                                if (funded !== false) {
+                                    let update_written = await scrypta.write(sid, 'TEMPORARY', JSON.stringify(signed), '', manifest.version, 'ida://')
+                                    if (update_written.uuid !== undefined && update_written.txs !== undefined && update_written.txs.length > 0) {
+                                        console.log('UPDATE TRANSACTION WRITTEN CORRECTLY')
+                                    } else {
+                                        console.error('ERROR WHILE CREATING TRANSACTION')
+                                    }
+                                } else {
+                                    console.log('ERROR WHILE FUNDING ADDRESS')
                                 }
                             } else {
-                                console.log('ERROR WHILE FUNDING ADDRESS')
+                                console.log('CAN\'T UPDATE IMMUTABLE CONTRACT!')
                             }
                         } else {
                             console.log('VERSION EXIST, PLEASE UPDATE CONTRACT FIRST')
