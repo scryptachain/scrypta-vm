@@ -30,7 +30,7 @@ function prepare(toCompile){
     return new Promise(async response => {
         try{
             let compiled = await compiler(toCompile.toString().trim())
-            if(compiled !== false && compiled.indexOf('while') === -1){
+            if(compiled !== false){
                 let vm = new NodeVM({
                     console: 'inherit',
                     sandbox: {},

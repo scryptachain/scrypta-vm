@@ -4,12 +4,16 @@
   "description": "Scrypta experiment with Virtual Machines",
   "main": "svm.js",
   "scripts": {
-    "dev": "nodemon index.js --ignore 'db/*' "
+    "dev": "nodemon index.js --ignore 'db/*'",
+    "pub": "node pub.js -m ida_modules/helloworld.js -i Sqsq34jAHopAJUtAs3j5iV15XqGLZbWNRHFEkH5LA7kGR4s1AHJR"
   },
   "author": "Scrypta Task Force",
   "license": "MIT",
   "dependencies": {
     "@scrypta/core": "^2.3.1",
+    "coinkey": "^3.0.0",
+    "lzutf8": "^0.5.6",
+    "minimist": "^1.2.5",
     "vm2": "^3.9.2"
   },
   "devDependencies": {
