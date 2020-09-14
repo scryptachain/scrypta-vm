@@ -11,7 +11,6 @@ async function constructor() {
     
 }
 
-
 function helloworld(who) {
     return new Promise(async response => {
         if (who !== undefined && who.length > 0) {

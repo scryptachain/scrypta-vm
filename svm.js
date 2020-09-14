@@ -2,7 +2,7 @@ const { NodeVM } = require('vm2')
 const compressor = require('lzutf8')
 const ScryptaCore = require('@scrypta/core')
 
-async function compiler(code){
+async function compiler(code, returnCode = true) {
     return new Promise(response => {
         let compiled = `
             const ScryptaCore = require('@scrypta/core')
@@ -12,27 +12,36 @@ async function compiler(code){
             scrypta.testnetIdaNodes = ['http://localhost:3001']
         `
         compiled += code
+        let runnable = []
         let functions = code.match(/(?<=function )(.*?)(?=\s*\()/gi)
-        if(functions.length > 1){
-            for(let k in functions){
+        if (functions.length > 1) {
+            for (let k in functions) {
                 let fn = functions[k]
-                if(fn !== 'constructor'){
-                    compiled += '\nmodule.exports.helloworld = ' + fn
+                if (fn !== 'constructor') {
+                    runnable.push(fn)
+                    compiled += '\nmodule.exports.' + fn + ' = ' + fn
                 }
             }
             compiled += '\nconstructor()'
-            response(compiled)
-        }else{
+            if (returnCode) {
+                response(compiled)
+            } else {
+                response({
+                    functions: runnable,
+                    code: compiled
+                })
+            }
+        } else {
             response(false)
         }
     })
 }
 
-function prepare(toCompile){
+function prepare(toCompile) {
     return new Promise(async response => {
-        try{
+        try {
             let compiled = await compiler(toCompile.toString().trim())
-            if(compiled !== false){
+            if (compiled !== false) {
                 let vm = new NodeVM({
                     console: 'inherit',
                     sandbox: {},
@@ -42,50 +51,84 @@ function prepare(toCompile){
                 })
                 let mod = vm.run(compiled, 'svm.js')
                 response(mod)
-            }else{
+            } else {
                 response(false)
             }
-        }catch(e){
+        } catch (e) {
             console.log(e)
             response(false)
         }
     })
 }
 
-function run(address, functionToCall, paramsToPass){
+function read(address) {
     return new Promise(async response => {
-        try{
+        try {
             let scrypta = new ScryptaCore
             scrypta.staticnodes = true
             scrypta.mainnetIdaNodes = ['http://localhost:3001']
             let module = await scrypta.post('/read', { address: address, protocol: 'ida://' })
-            if(module.data[0] !== undefined){
+            if (module.data[0] !== undefined) {
                 let data = module.data[0].data
                 let verify = await scrypta.verifyMessage(data.pubkey, data.signature, data.message)
                 let contract = JSON.parse(data.message)
-                if(verify !== false){
+                if (verify !== false) {
                     let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
-                    let code = await prepare(toCompile)
-                    if(code !== false){
-                        if(code[functionToCall] !== undefined){
-                            let result = await code[functionToCall](paramsToPass)
-                            response(result)
-                        }else{
-                            response(false)
-                        }
-                    }else{
+                    let compiled = await compiler(toCompile.toString().trim(), false)
+                    if (compiled !== false) {
+                        contract.functions = compiled.functions
+                        contract.code = compiled.code
+                        response(contract)
+                    } else {
                         response(false)
                     }
-                }else{
+                } else {
                     response(false)
                 }
-            }else{
+            } else {
                 response(false)
             }
-        }catch(e){
+        } catch (e) {
+            response(e)
+        }
+    })
+}
+
+function run(address, functionToCall, paramsToPass) {
+    return new Promise(async response => {
+        try {
+            let scrypta = new ScryptaCore
+            scrypta.staticnodes = true
+            scrypta.mainnetIdaNodes = ['http://localhost:3001']
+            let module = await scrypta.post('/read', { address: address, protocol: 'ida://' })
+            if (module.data[0] !== undefined) {
+                let data = module.data[0].data
+                let verify = await scrypta.verifyMessage(data.pubkey, data.signature, data.message)
+                let contract = JSON.parse(data.message)
+                if (verify !== false) {
+                    let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
+                    let code = await prepare(toCompile)
+                    if (code !== false) {
+                        if (code[functionToCall] !== undefined) {
+                            let result = await code[functionToCall](paramsToPass)
+                            response(result)
+                        } else {
+                            response(false)
+                        }
+                    } else {
+                        response(false)
+                    }
+                } else {
+                    response(false)
+                }
+            } else {
+                response(false)
+            }
+        } catch (e) {
             response(e)
         }
     })
 }
 
 exports.run = run
+exports.read = read
