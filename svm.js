@@ -2,9 +2,12 @@ const { NodeVM } = require('vm2')
 const compressor = require('lzutf8')
 const ScryptaCore = require('@scrypta/core')
 
-async function compiler(code, request = '') {
+async function compiler(code, request = '', local = false) {
     return new Promise(response => {
-        let compiled = `const ScryptaCore = require('@scrypta/core');let scrypta = new ScryptaCore;scrypta.staticnodes = true;scrypta.mainnetIdaNodes = ['http://localhost:3001'];scrypta.testnetIdaNodes = ['http://localhost:3001'];`
+        let compiled = `const ScryptaCore = require('@scrypta/core');let scrypta = new ScryptaCore;scrypta.staticnodes = true;`
+        if (local === true) {
+            compiled += `scrypta.mainnetIdaNodes = ['http://localhost:3001'];scrypta.testnetIdaNodes = ['http://localhost:3001'];`
+        }
         if (request !== '') {
             compiled += 'const request = ' + JSON.stringify(request) + ';'
         }
@@ -30,10 +33,10 @@ async function compiler(code, request = '') {
     })
 }
 
-function prepare(toCompile, request = '') {
+function prepare(toCompile, request = '', local = false) {
     return new Promise(async response => {
         try {
-            let compiled = await compiler(toCompile.toString().trim(), request)
+            let compiled = await compiler(toCompile.toString().trim(), request, local)
             if (compiled !== false) {
                 let vm = new NodeVM({
                     console: 'inherit',
@@ -54,12 +57,14 @@ function prepare(toCompile, request = '') {
     })
 }
 
-function read(address) {
+function read(address, local) {
     return new Promise(async response => {
         try {
             let scrypta = new ScryptaCore
             scrypta.staticnodes = true
-            scrypta.mainnetIdaNodes = ['http://localhost:3001']
+            if (local) {
+                scrypta.mainnetIdaNodes = ['http://localhost:3001']
+            }
             let contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
             let genesisindex = contractBlockchain.data.length - 1
             let genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
@@ -75,7 +80,7 @@ function read(address) {
                 let contract = JSON.parse(data.message)
                 if (verify !== false) {
                     let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
-                    let compiled = await compiler(toCompile.toString().trim())
+                    let compiled = await compiler(toCompile.toString().trim(), '', local)
                     if (compiled !== false) {
                         contract.functions = compiled.functions
                         contract.code = compiled.code
@@ -95,12 +100,14 @@ function read(address) {
     })
 }
 
-function run(address, request) {
+function run(address, request, local = false) {
     return new Promise(async response => {
         try {
             let scrypta = new ScryptaCore
             scrypta.staticnodes = true
-            scrypta.mainnetIdaNodes = ['http://localhost:3001']
+            if (local) {
+                scrypta.mainnetIdaNodes = ['http://localhost:3001']
+            }
             let validateRequest = await (scrypta.verifyMessage(request.pubkey, request.signature, request.message))
             if (validateRequest !== false) {
                 request.message = JSON.parse(request.message)
@@ -120,7 +127,7 @@ function run(address, request) {
                         let contract = JSON.parse(data.message)
                         if (verify !== false) {
                             let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
-                            let code = await prepare(toCompile, request)
+                            let code = await prepare(toCompile, request, local)
                             if (code !== false) {
                                 if (code[request.message.function] !== undefined) {
                                     let result = await code[request.message.function](request.message.params)
