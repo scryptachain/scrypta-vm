@@ -1,12 +1,10 @@
 const vm = require('./svm')
 const fs = require('fs')
 
-// THiS PART SHOULD BE INCLUDED IN @scrypta/core
-
-let code = fs.readFileSync('./ida_modules/helloworld.js')
-async function runModule() {
-    let result = await vm.run(code, 'helloworld', "turinglabs")
+let contract = 'LV4bojRfHZvokXGBR5iJrjSufbuSA39APK'
+async function runContract() {
+    let result = await vm.run(contract, 'helloworld', 'turinglabs')
     console.log(result)
 }
 
-runModule()
+runContract()

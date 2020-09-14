@@ -1,4 +1,6 @@
 const { NodeVM } = require('vm2')
+const compressor = require('lzutf8')
+const ScryptaCore = require('@scrypta/core')
 
 async function compiler(code){
     return new Promise(response => {
@@ -50,13 +52,33 @@ function prepare(toCompile){
     })
 }
 
-function run(toCompile, functionToCall, paramsToPass){
+function run(address, functionToCall, paramsToPass){
     return new Promise(async response => {
         try{
-            let code = await prepare(toCompile)
-            if(code !== false){
-                let result = await code[functionToCall](paramsToPass)
-                response(result)
+            let scrypta = new ScryptaCore
+            scrypta.staticnodes = true
+            scrypta.mainnetIdaNodes = ['http://localhost:3001']
+            let module = await scrypta.post('/read', { address: address, protocol: 'ida://' })
+            if(module.data[0] !== undefined){
+                let data = module.data[0].data
+                let verify = await scrypta.verifyMessage(data.pubkey, data.signature, data.message)
+                let contract = JSON.parse(data.message)
+                if(verify !== false){
+                    let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
+                    let code = await prepare(toCompile)
+                    if(code !== false){
+                        if(code[functionToCall] !== undefined){
+                            let result = await code[functionToCall](paramsToPass)
+                            response(result)
+                        }else{
+                            response(false)
+                        }
+                    }else{
+                        response(false)
+                    }
+                }else{
+                    response(false)
+                }
             }else{
                 response(false)
             }
