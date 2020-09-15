@@ -21,10 +21,10 @@ async function compiler(code, request = '', local = false) {
                     let sp = fn.split(':')
                     if (sp[1] !== undefined) {
                         if(sp[0].trim() === 'public'){
-                            runnable.push(fn)
+                            runnable.push(sp[1].trim())
                             compiled += '\nmodule.exports.' + sp[1].trim() + ' = ' + sp[1].trim() + ';'
                         }
-                        compiled = compiled.replace(fn, sp[1])
+                        compiled = compiled.replace(fn, sp[1].trim())
                     } else {
                         runnable.push(fn)
                         compiled += '\nmodule.exports.' + fn + ' = ' + fn + ';'

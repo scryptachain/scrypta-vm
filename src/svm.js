@@ -2,14 +2,20 @@ const { NodeVM } = require('vm2')
 const compressor = require('lzutf8')
 const fs = require('fs')
 const ScryptaCore = require('@scrypta/core')
-const v001 = require('./compiler/0.0.1.js')
+const v001 = require('../compiler/0.0.1')
 var MongoClient = require('mongodb').MongoClient
 const crypto = require('crypto')
 var CoinKey = require('coinkey')
 
-global['db_url'] = 'mongodb://localhost:27017'
-global['db_options'] = { useNewUrlParser: true, useUnifiedTopology: true }
-global['db_name'] = 'idanodejs'
+if (global['db_url'] === undefined) {
+    global['db_url'] = 'mongodb://localhost:27017'
+}
+if (global['db_options'] === undefined) {
+    global['db_options'] = { useNewUrlParser: true, useUnifiedTopology: true }
+}
+if (global['db_name'] === undefined) {
+    global['db_name'] = 'idanodejs'
+}
 
 function prepare(toCompile, request = '', local = false, address) {
     return new Promise(async response => {
@@ -35,89 +41,101 @@ function prepare(toCompile, request = '', local = false, address) {
                             db: {
                                 read(query, limit) {
                                     return new Promise(response => {
-                                        MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
-                                            var db = client.db(global['db_name'])
-                                            if (err) {
-                                                client.close()
-                                                response(err)
-                                            } else {
-                                                try {
-                                                    let result = []
-                                                    if (limit !== undefined) {
-                                                        result = await db.collection(address).find(query).limit(limit).toArray()
-                                                    } else {
-                                                        result = await db.collection(address).find(query).toArray()
+                                        if (local === true) {
+                                            MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                                var db = client.db(global['db_name'])
+                                                if (err) {
+                                                    client.close()
+                                                    response(err)
+                                                } else {
+                                                    try {
+                                                        let result = []
+                                                        if (limit !== undefined) {
+                                                            result = await db.collection(address).find(query).limit(limit).toArray()
+                                                        } else {
+                                                            result = await db.collection(address).find(query).toArray()
+                                                        }
+                                                        let array = []
+                                                        for (let k in result) {
+                                                            delete result[k]._id
+                                                            let state = result[k]
+                                                            array.push(state)
+                                                        }
+                                                        if (array.length === 1) {
+                                                            array = array[0]
+                                                        }
+                                                        response(array)
+                                                    } catch (e) {
+                                                        response(false)
                                                     }
-                                                    let array = []
-                                                    for(let k in result){
-                                                        delete result[k]._id
-                                                        let state = result[k]
-                                                        array.push(state)
-                                                    }
-                                                    if(array.length === 1){
-                                                        array = array[0]
-                                                    }
-                                                    response(array)
-                                                } catch (e) {
-                                                    response(false)
                                                 }
-                                            }
-                                        })
+                                            })
+                                        } else {
+                                            response(false)
+                                        }
                                     })
                                 },
-                                insert(object){
-                                    return new Promise(response => {
-                                        MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
-                                            var db = client.db(global['db_name'])
-                                            if (err) {
-                                                client.close()
-                                                response(err)
-                                            } else {
-                                                try {
-                                                    let result = await db.collection(address).insertOne(object);
-                                                    response(result)
-                                                } catch (e) {
-                                                    response(false)
+                                insert(object) {
+                                    if (local === true) {
+                                        return new Promise(response => {
+                                            MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                                var db = client.db(global['db_name'])
+                                                if (err) {
+                                                    client.close()
+                                                    response(err)
+                                                } else {
+                                                    try {
+                                                        let result = await db.collection(address).insertOne(object);
+                                                        response(result)
+                                                    } catch (e) {
+                                                        response(false)
+                                                    }
                                                 }
-                                            }
+                                            })
                                         })
-                                    }) 
+                                    } else {
+                                        response(false)
+                                    }
                                 },
-                                update(query, object){
-                                    return new Promise(response => {
-                                        MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
-                                            var db = client.db(global['db_name'])
-                                            if (err) {
-                                                client.close()
-                                                response(err)
-                                            } else {
-                                                try {
-                                                    let result = await db.collection(address).updateOne(query,object);
-                                                    response(result)
-                                                } catch (e) {
-                                                    response(false)
+                                update(query, object) {
+                                    if (local === true) {
+                                        return new Promise(response => {
+                                            MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                                var db = client.db(global['db_name'])
+                                                if (err) {
+                                                    client.close()
+                                                    response(err)
+                                                } else {
+                                                    try {
+                                                        let result = await db.collection(address).updateOne(query, object);
+                                                        response(result)
+                                                    } catch (e) {
+                                                        response(false)
+                                                    }
                                                 }
-                                            }
+                                            })
                                         })
-                                    }) 
+                                    }
                                 },
-                                delete(query){
-                                    return new Promise(response => {
-                                        MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
-                                            var db = client.db(global['db_name'])
-                                            if (err) {
-                                                client.close()
-                                                response(err)
-                                            } else {
-                                                try {
-                                                    let result = await db.collection(address).deleteOne(query)
-                                                    response(result)
-                                                } catch (e) {
-                                                    response(false)
+                                delete(query) {
+                                    if (local === true) {
+                                        return new Promise(response => {
+                                            MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                                var db = client.db(global['db_name'])
+                                                if (err) {
+                                                    client.close()
+                                                    response(err)
+                                                } else {
+                                                    try {
+                                                        let result = await db.collection(address).deleteOne(query)
+                                                        response(result)
+                                                    } catch (e) {
+                                                        response(false)
+                                                    }
                                                 }
-                                            }
+                                            })
                                         })
-                                    }) 
+                                    }
                                 }
                             }
                         }
@@ -135,7 +153,7 @@ function prepare(toCompile, request = '', local = false, address) {
     })
 }
 
-function read(address, local) {
+function read(address, local = false) {
     return new Promise(async response => {
         try {
             let scrypta = new ScryptaCore
@@ -201,9 +219,9 @@ function run(address, request, local = false) {
             }
             let validateRequest = await (scrypta.verifyMessage(request.pubkey, request.signature, request.message))
             if (validateRequest !== false) {
-                try{
+                try {
                     request.message = JSON.parse(JSON.parse(Buffer.from(request.message, 'hex').toString('utf8')))
-                }catch(e){
+                } catch (e) {
                     request.message = JSON.parse(Buffer.from(request.message, 'hex').toString('utf8'))
                 }
                 if (request.message.function !== undefined && request.message.params !== undefined) {

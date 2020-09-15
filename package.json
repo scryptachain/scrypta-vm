@@ -1,11 +1,16 @@
 {
-  "name": "scrypta-vm",
+  "name": "@scrypta/vm",
   "version": "1.0.0",
-  "description": "Scrypta experiment with Virtual Machines",
-  "main": "svm.js",
+  "description": "Scrypta Virtual Machine to run Smart Contracts",
+  "private": false,
+  "main": "src/svm.js",
+  "bin": {
+    "scrypta-contracts": "./src/cli.js"
+  },
   "scripts": {
     "dev": "nodemon playground.js --ignore 'db/*'",
-    "pub": "node pub.js -m test_contracts/helloworld.js -i Sqsq34jAHopAJUtAs3j5iV15XqGLZbWNRHFEkH5LA7kGR4s1AHJR"
+    "deploy": "node ./src/cli.js -m test_contracts/helloworld.ssc -i Sqsq34jAHopAJUtAs3j5iV15XqGLZbWNRHFEkH5LA7kGR4s1AHJR",
+    "pub": "npm publish --access public"
   },
   "author": "Scrypta Task Force",
   "license": "MIT",

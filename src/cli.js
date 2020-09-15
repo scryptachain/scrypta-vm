@@ -52,6 +52,7 @@ async function publishModule() {
                 code: compressor.compress(code, { outputEncoding: 'Base64' })
             }
             let scrypta = new ScryptaCore
+            scrypta.staticnodes = true
             let identity = argv.i
             let pubkey = await scrypta.getPublicKey(identity)
             let address = await scrypta.getAddressFromPubKey(pubkey)
