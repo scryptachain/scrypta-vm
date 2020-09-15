@@ -64,6 +64,7 @@ function prepare(toCompile, request = '', local = false, address) {
                                                         if (array.length === 1) {
                                                             array = array[0]
                                                         }
+                                                        client.close()
                                                         response(array)
                                                     } catch (e) {
                                                         response(false)
@@ -86,8 +87,10 @@ function prepare(toCompile, request = '', local = false, address) {
                                                 } else {
                                                     try {
                                                         let result = await db.collection(address).insertOne(object);
+                                                        client.close()
                                                         response(result)
                                                     } catch (e) {
+                                                        client.close()
                                                         response(false)
                                                     }
                                                 }
@@ -107,7 +110,8 @@ function prepare(toCompile, request = '', local = false, address) {
                                                     response(err)
                                                 } else {
                                                     try {
-                                                        let result = await db.collection(address).updateOne(query, object);
+                                                        let result = await db.collection(address).updateOne(query, object)
+                                                        client.close()
                                                         response(result)
                                                     } catch (e) {
                                                         response(false)
@@ -128,6 +132,7 @@ function prepare(toCompile, request = '', local = false, address) {
                                                 } else {
                                                     try {
                                                         let result = await db.collection(address).deleteOne(query)
+                                                        client.close()
                                                         response(result)
                                                     } catch (e) {
                                                         response(false)
@@ -153,6 +158,36 @@ function prepare(toCompile, request = '', local = false, address) {
     })
 }
 
+function returnLocalContract(address) {
+    return new Promise(async response => {
+        MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+            var db = client.db(global['db_name'])
+            if (err) {
+                client.close()
+                response(err)
+            } else {
+                try {
+                    let result = await db.collection('written').find({ address: address, protocol: 'ida://' }).toArray()
+                    let array = []
+                    for (let k in result) {
+                        delete result[k]._id
+                        let state = result[k]
+                        array.push(state)
+                    }
+                    console.log(array)
+                    if (array.length === 1) {
+                        array = array[0]
+                    }
+                    client.close()
+                    response({data: array})
+                } catch (e) {
+                    response(false)
+                }
+            }
+        })
+    })
+}
+
 function read(address, local = false) {
     return new Promise(async response => {
         try {
@@ -162,7 +197,12 @@ function read(address, local = false) {
                 scrypta.mainnetIdaNodes = ['http://localhost:3001']
             }
             if (address.indexOf('/') === -1) {
-                let contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
+                let contractBlockchain
+                if (local) {
+                    contractBlockchain = await returnLocalContract(address)
+                } else {
+                    contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
+                }
                 let genesisindex = contractBlockchain.data.length - 1
                 let genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
                 let versionindex
@@ -226,7 +266,12 @@ function run(address, request, local = false) {
                 }
                 if (request.message.function !== undefined && request.message.params !== undefined) {
                     if (address.indexOf('/') === -1) {
-                        let contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
+                        let contractBlockchain
+                        if (local) {
+                            contractBlockchain = await returnLocalContract(address)
+                        } else {
+                            contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
+                        }
                         let genesisindex = contractBlockchain.data.length - 1
                         let genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
                         let versionindex

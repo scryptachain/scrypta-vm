@@ -2,7 +2,7 @@ const vm = require('./src/svm')
 const fs = require('fs')
 
 async function readContract() {
-    let result = await vm.read('LV4bojRfHZvokXGBR5iJrjSufbuSA39APK', false)
+    let result = await vm.read('LV4bojRfHZvokXGBR5iJrjSufbuSA39APK', true)
     console.log('READING STORED CONTRACT')
     console.log(result)
 }
@@ -20,4 +20,4 @@ async function runContract() {
     console.log(result)
 }
 readContract()
-runContract()
+// runContract()
