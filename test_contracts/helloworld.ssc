@@ -6,12 +6,14 @@
  * IMMUTABLE: false
  */
 
+// DEFINING COMPILER VERSION
 /* Scrypta v0.0.1 */
+
 const time = new Date()
 let state = {}
 async function constructor() {
     let read = await db.read({"address": request.address})
-    
+
     if(read.length === 0){
         await db.insert({ "address": request.address, score: 0 })
         read = await db.read({"address": request.address})
@@ -27,7 +29,8 @@ async function constructor() {
 }
 
 async function public: eachBlock(block){
-
+    // THIS FUNCTION WILL BE CALLED FOR EACH NEW BLOCK!
+    console.log(block)
 }
 
 function private: inner(){

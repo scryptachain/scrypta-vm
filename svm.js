@@ -201,7 +201,11 @@ function run(address, request, local = false) {
             }
             let validateRequest = await (scrypta.verifyMessage(request.pubkey, request.signature, request.message))
             if (validateRequest !== false) {
-                request.message = JSON.parse(request.message)
+                try{
+                    request.message = JSON.parse(JSON.parse(Buffer.from(request.message, 'hex').toString('utf8')))
+                }catch(e){
+                    request.message = JSON.parse(Buffer.from(request.message, 'hex').toString('utf8'))
+                }
                 if (request.message.function !== undefined && request.message.params !== undefined) {
                     if (address.indexOf('/') === -1) {
                         let contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })

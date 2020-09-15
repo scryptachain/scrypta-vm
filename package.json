@@ -4,7 +4,7 @@
   "description": "Scrypta experiment with Virtual Machines",
   "main": "svm.js",
   "scripts": {
-    "dev": "nodemon index.js --ignore 'db/*'",
+    "dev": "nodemon playground.js --ignore 'db/*'",
     "pub": "node pub.js -m test_contracts/helloworld.js -i Sqsq34jAHopAJUtAs3j5iV15XqGLZbWNRHFEkH5LA7kGR4s1AHJR"
   },
   "author": "Scrypta Task Force",

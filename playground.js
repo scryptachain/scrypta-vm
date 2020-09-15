@@ -10,9 +10,9 @@ async function readContract() {
 async function runContract() {
     console.log('RUNNING CONTRACT')
     let request = {
-        "message": "{\"function\":\"helloworld\",\"params\":\"turinglabs\"}",
-        "hash": "9bb8d77dcc9be70228a219e9169b9fa086a935ba28eb04263f6a5aef15fccaae",
-        "signature": "430d28ca0cd7c4e194b60c2983e262d0f19df690f7113d5bed712ad503b0eba276218aa3ef11f69aec19e2b6186bec9eb29d9bffd4459c2791b01a5a4d7ebe3d",
+        "message": "227b5c2266756e6374696f6e5c223a5c2268656c6c6f776f726c645c222c5c22706172616d735c223a5c22747572696e676c6162735c227d22",
+        "hash": "d98ffa9551a7a8c393020edac2868968fd9d50a74f7124ec638cdabf2ae42ea2",
+        "signature": "41565e3294a988fe8d867ab109946d20a7c29549fa6c412cf486e65ac4438d9e55813ea4d9c9f96cede495e6a8cb4e38762d8c6cbca8deb3820abe9a015fc537",
         "pubkey": "03b2131eef9abc87f7f1fd29b3a27c4fb9add53884ece96a4ad7696f86f5e2a168",
         "address": "LaoH8mrMgKoE7Egte8WuhMPpBeBJJHnT7M"
     }
