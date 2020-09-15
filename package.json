@@ -14,6 +14,7 @@
     "coinkey": "^3.0.0",
     "lzutf8": "^0.5.6",
     "minimist": "^1.2.5",
+    "mongodb": "^3.6.2",
     "vm2": "^3.9.2"
   },
   "devDependencies": {

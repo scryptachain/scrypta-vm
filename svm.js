@@ -2,54 +2,129 @@ const { NodeVM } = require('vm2')
 const compressor = require('lzutf8')
 const fs = require('fs')
 const ScryptaCore = require('@scrypta/core')
+const v001 = require('./compiler/0.0.1.js')
+var MongoClient = require('mongodb').MongoClient
+const crypto = require('crypto')
+var CoinKey = require('coinkey')
 
-async function compiler(code, request = '', local = false) {
-    return new Promise(response => {
-        let compiled = `const ScryptaCore = require('@scrypta/core');let scrypta = new ScryptaCore;scrypta.staticnodes = true;`
-        if (local === true) {
-            compiled += `scrypta.mainnetIdaNodes = ['http://localhost:3001'];scrypta.testnetIdaNodes = ['http://localhost:3001'];`
-        }
-        if (request !== '') {
-            compiled += 'const request = ' + JSON.stringify(request) + ';'
-        }
+global['db_url'] = 'mongodb://localhost:27017'
+global['db_options'] = { useNewUrlParser: true, useUnifiedTopology: true }
+global['db_name'] = 'idanodejs'
 
-        let functions = code.match(/(?<=function )(.*?)(?=\s*\()/gi)
-        compiled += code
-        let runnable = []
-        if (functions.length > 1) {
-            for (let k in functions) {
-                let fn = functions[k]
-                if (fn !== 'constructor') {
-                    runnable.push(fn)
-                    compiled += '\nmodule.exports.' + fn + ' = ' + fn + ';'
-                }
-            }
-            compiled += '\nconstructor();'
-
-            response({
-                functions: runnable,
-                code: compiled
-            })
-        } else {
-            response(false)
-        }
-    })
-}
-
-function prepare(toCompile, request = '', local = false) {
+function prepare(toCompile, request = '', local = false, address) {
     return new Promise(async response => {
         try {
-            let compiled = await compiler(toCompile.toString().trim(), request, local)
+            let compiled = await v001.compiler(toCompile.toString().trim(), request, local)
             if (compiled !== false) {
+                if (local === true && address.indexOf('/') !== -1) {
+                    const hash = crypto.createHash('sha256').update(address).digest('hex')
+                    var temp = new CoinKey(Buffer.from(hash, 'hex'), {
+                        private: 0xae,
+                        public: 0x30,
+                        scripthash: 0x0d
+                    })
+                    address = temp.publicAddress
+                }
                 let vm = new NodeVM({
                     console: 'inherit',
-                    sandbox: {},
                     require: {
-                        external: true
+                        external: {
+                            modules: ['@scrypta/core']
+                        },
+                        mock: {
+                            db: {
+                                read(query, limit) {
+                                    return new Promise(response => {
+                                        MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                            var db = client.db(global['db_name'])
+                                            if (err) {
+                                                client.close()
+                                                response(err)
+                                            } else {
+                                                try {
+                                                    let result = []
+                                                    if (limit !== undefined) {
+                                                        result = await db.collection(address).find(query).limit(limit).toArray()
+                                                    } else {
+                                                        result = await db.collection(address).find(query).toArray()
+                                                    }
+                                                    let array = []
+                                                    for(let k in result){
+                                                        delete result[k]._id
+                                                        let state = result[k]
+                                                        array.push(state)
+                                                    }
+                                                    if(array.length === 1){
+                                                        array = array[0]
+                                                    }
+                                                    response(array)
+                                                } catch (e) {
+                                                    response(false)
+                                                }
+                                            }
+                                        })
+                                    })
+                                },
+                                insert(object){
+                                    return new Promise(response => {
+                                        MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                            var db = client.db(global['db_name'])
+                                            if (err) {
+                                                client.close()
+                                                response(err)
+                                            } else {
+                                                try {
+                                                    let result = await db.collection(address).insertOne(object);
+                                                    response(result)
+                                                } catch (e) {
+                                                    response(false)
+                                                }
+                                            }
+                                        })
+                                    }) 
+                                },
+                                update(query, object){
+                                    return new Promise(response => {
+                                        MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                            var db = client.db(global['db_name'])
+                                            if (err) {
+                                                client.close()
+                                                response(err)
+                                            } else {
+                                                try {
+                                                    let result = await db.collection(address).updateOne(query,object);
+                                                    response(result)
+                                                } catch (e) {
+                                                    response(false)
+                                                }
+                                            }
+                                        })
+                                    }) 
+                                },
+                                delete(query){
+                                    return new Promise(response => {
+                                        MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                            var db = client.db(global['db_name'])
+                                            if (err) {
+                                                client.close()
+                                                response(err)
+                                            } else {
+                                                try {
+                                                    let result = await db.collection(address).deleteOne(query)
+                                                    response(result)
+                                                } catch (e) {
+                                                    response(false)
+                                                }
+                                            }
+                                        })
+                                    }) 
+                                }
+                            }
+                        }
                     }
                 })
-                let mod = vm.run(compiled.code, 'svm.js')
-                response(mod)
+                let contract = vm.run(compiled.code, 'svm.js')
+                response(contract)
             } else {
                 response(false)
             }
@@ -84,7 +159,7 @@ function read(address, local) {
                     let contract = JSON.parse(data.message)
                     if (verify !== false) {
                         let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
-                        let compiled = await compiler(toCompile.toString().trim(), '', local)
+                        let compiled = await v001.compiler(toCompile.toString().trim(), '', local)
                         if (compiled !== false) {
                             contract.functions = compiled.functions
                             contract.code = compiled.code
@@ -100,7 +175,7 @@ function read(address, local) {
                 }
             } else {
                 let toCompile = fs.readFileSync(address)
-                let compiled = await compiler(toCompile.toString(), '', local)
+                let compiled = await v001.compiler(toCompile.toString(), '', local)
                 if (compiled !== false) {
                     let contract = {}
                     contract.functions = compiled.functions
@@ -144,7 +219,7 @@ function run(address, request, local = false) {
                             let contract = JSON.parse(data.message)
                             if (verify !== false) {
                                 let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
-                                let code = await prepare(toCompile, request, local)
+                                let code = await prepare(toCompile, request, local, address)
                                 if (code !== false) {
                                     if (code[request.message.function] !== undefined) {
                                         let result = await code[request.message.function](request.message.params)
@@ -163,7 +238,7 @@ function run(address, request, local = false) {
                         }
                     } else {
                         let toCompile = fs.readFileSync(address)
-                        let code = await prepare(toCompile, request, local)
+                        let code = await prepare(toCompile, request, local, address)
                         if (code !== false) {
                             if (code[request.message.function] !== undefined) {
                                 let result = await code[request.message.function](request.message.params)

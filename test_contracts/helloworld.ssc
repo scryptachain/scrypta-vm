@@ -1,0 +1,45 @@
+/**
+ * NAME: HELLOWORLD
+ * DESCRIPTION: SIMPLE HELLO WORLD MODULE
+ * AUTHOR: TURINGLABS
+ * VERSION: 1.0.5
+ * IMMUTABLE: false
+ */
+
+/* Scrypta v0.0.1 */
+const time = new Date()
+let state = {}
+async function constructor() {
+    let read = await db.read({"address": request.address})
+    
+    if(read.length === 0){
+        await db.insert({ "address": request.address, score: 0 })
+        read = await db.read({"address": request.address})
+        console.log('CREATED', read)
+    }
+
+    let increment = read.score + 1
+    await db.update({"address": request.address }, { $set: { score: increment } })
+    read = await db.read({"address": request.address})
+    console.log('UPDATED', read)
+    await db.delete({ "address": request.address })
+    console.log('DELETED CORRECTLY')
+}
+
+async function public: eachBlock(block){
+
+}
+
+function private: inner(){
+    return true
+}
+
+function public: helloworld(who) {
+    return new Promise(async response => {
+        if (who !== undefined && who.length > 0) {
+            response('Hello ' + who + '! Your address is ' + request.address + '. Now are ' + time + '!')
+        } else {
+            response('Hello who?')
+        }
+    })
+}

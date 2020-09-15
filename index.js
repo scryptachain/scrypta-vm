@@ -2,10 +2,9 @@ const vm = require('./svm')
 const fs = require('fs')
 
 async function readContract() {
-    /*let result = await vm.read('LV4bojRfHZvokXGBR5iJrjSufbuSA39APK')
+    let result = await vm.read('LV4bojRfHZvokXGBR5iJrjSufbuSA39APK')
     console.log('READING CONTRACT')
-    console.log(result)*/
-    runContract()
+    console.log(result)
 }
 
 async function runContract() {
@@ -17,8 +16,8 @@ async function runContract() {
         "pubkey": "03b2131eef9abc87f7f1fd29b3a27c4fb9add53884ece96a4ad7696f86f5e2a168",
         "address": "LaoH8mrMgKoE7Egte8WuhMPpBeBJJHnT7M"
     }
-    let result = await vm.run('./test_contracts/helloworld.js', request, true)
+    let result = await vm.run('./test_contracts/helloworld.ssc', request, true)
     console.log(result)
 }
 
-readContract()
+runContract()

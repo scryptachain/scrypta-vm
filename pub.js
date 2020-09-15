@@ -4,7 +4,7 @@ const compressor = require('lzutf8')
 const argv = require('minimist')(process.argv.slice(2))
 const ScryptaCore = require('@scrypta/core')
 var CoinKey = require('coinkey')
-var crypto = require('crypto');
+var crypto = require('crypto')
 
 async function publishModule() {
     if (argv.m !== undefined && argv.i !== undefined) {

@@ -1,3 +1,5 @@
 {
-    "ignore": ["db/*"]
+    "ignore": ["db/*"],
+    "watch": ["./test_contracts/*", "./compiler/*", "./*.js"],
+    "ext": "js,ssc"
   }
