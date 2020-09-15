@@ -174,7 +174,6 @@ function returnLocalContract(address) {
                         let state = result[k]
                         array.push(state)
                     }
-                    console.log(array)
                     if (array.length === 1) {
                         array = array[0]
                     }
