@@ -2,7 +2,7 @@
 
 async function compiler(code, request = '', local = false) {
     return new Promise(response => {
-        let compiled = `const ScryptaCore = require('@scrypta/core'); const db = require('db');`
+        let compiled = `const ScryptaCore = require('@scrypta/core'); const db = require('db'); const axios = require('axios');`
         compiled += `const scrypta = new ScryptaCore; scrypta.staticnodes = true;`
         if (local === true) {
             compiled += `scrypta.mainnetIdaNodes = ['http://localhost:3001']; scrypta.testnetIdaNodes = ['http://localhost:3001'];`

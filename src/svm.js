@@ -35,7 +35,7 @@ function prepare(toCompile, request = '', local = false, address) {
                     console: 'inherit',
                     require: {
                         external: {
-                            modules: ['@scrypta/core']
+                            modules: ['@scrypta/core', 'axios']
                         },
                         mock: {
                             db: {

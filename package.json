@@ -1,6 +1,6 @@
 {
   "name": "@scrypta/vm",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Scrypta Virtual Machine to run Smart Contracts",
   "private": false,
   "main": "src/svm.js",
@@ -16,6 +16,7 @@
   "license": "MIT",
   "dependencies": {
     "@scrypta/core": "^2.3.1",
+    "axios": "^0.20.0",
     "coinkey": "^3.0.0",
     "lzutf8": "^0.5.6",
     "minimist": "^1.2.5",

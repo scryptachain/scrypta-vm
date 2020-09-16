@@ -82,7 +82,7 @@ async function publishModule() {
                         let version_check = await scrypta.post('/read', { address: manifest.address, refID: manifest.version, protocol: 'ida://' })
                         if (version_check.data[0] === undefined && genesis.contract.version !== manifest.version) {
                             console.log('PUBLISHING UPDATE ' + manifest.version)
-                            if (genesis.contract.immutable === undefined || genesis.contract.immutable === false) {
+                            if (genesis.contract.immutable === undefined || genesis.contract.immutable === 'false') {
                                 let signed = await scrypta.signMessage(identity, JSON.stringify(manifest))
                                 let contractBalance = await scrypta.get('/balance/' + manifest.address)
                                 let funded = false
