@@ -2,7 +2,7 @@
  * NAME: SCRYPTA SMART CONTRACTS INDEX
  * DESCRIPTION: THIS CONTRACT WILL MAINTAIN THE STATE OF THE CONTRACTS AND RETURN THE POSITION OF THE CONTRACTS IN KNOWN NETWORK
  * AUTHOR: TURINGLABS
- * VERSION: 1.1.3
+ * VERSION: 1.1.8
  * IMMUTABLE: false
  */
 
@@ -61,10 +61,17 @@ async function private: searchdata(data){
     }
 }
 
-function public: index(contract) {
+function public: index(request) {
     return new Promise(async response => {
-        if (contract !== undefined) {
-            let check = await db.read({contract: contract})
+        if (request !== undefined && request.contract !== undefined && request.version !== undefined) {
+            let check
+            console.log(request)
+            if(request.version === 'latest'){
+                check = await db.read({contract: request.contract })
+            }else{
+                check = await db.read({contract: request.contract + ':' + request.version })
+            }
+            console.log(check)
             if(check.contract !== undefined){
                 let idanodes = check.idanodes
                 let nodes = await axios.get('https://raw.githubusercontent.com/scryptachain/scrypta-idanode-network/master/peers')
@@ -85,7 +92,7 @@ function public: index(contract) {
                 }
                 response(parsed)
             }else{
-                response({ message: "No IdaNodes available.", contract: contract, error: true})
+                response({ message: "No IdaNodes available.", contract: request.contract, error: true})
             }
         } else {
             response('Please requests for a contract first')

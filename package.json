@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "nodemon playground.js --ignore 'db/*'",
-    "deploy": "node ./src/cli.js -m test_contracts/helloworld.ssc -i Sqsq34jAHopAJUtAs3j5iV15XqGLZbWNRHFEkH5LA7kGR4s1AHJR",
+    "deploy": "node ./src/cli.js -m PathToYourContract -i YourPrivKey",
     "pub": "npm publish --access public"
   },
   "author": "Scrypta Task Force",
