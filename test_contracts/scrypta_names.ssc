@@ -2,7 +2,7 @@
  * NAME: SCRYPTA DECENTRALIZED NAMES
  * DESCRIPTION: THIS CONTRACT WILL MAINTAIN A LIST OF NAMES ASSOCIATED TO ONE UNIQUE ADDRESS
  * AUTHOR: TURINGLABS
- * VERSION: 1.0.5
+ * VERSION: 1.0.6
  * IMMUTABLE: false
  */
 
@@ -96,8 +96,8 @@ function public: search(request) {
             }
         } else if (request !== undefined && request.address !== undefined) {
             let check = await db.read({ owner: request.address })
-            if(check.name !== undefined){
-                response({ name: check.name, error: false })
+            if(check.name !== undefined || check.length > 0){
+                response({ names: check, error: false })
             }else{
                 response({ message: "Address not found.", error: true})
             }
