@@ -5,7 +5,7 @@ let scrypta = new ScryptaCore
 scrypta.staticnodes = true
 
 async function readContract() {
-    let result = await vm.read('LV4bojRfHZvokXGBR5iJrjSufbuSA39APK', true)
+    let result = await vm.read('LcD7AGaY74xvVxDg3NkKjfP6QpG8Pmxpnu', true)
     console.log('READING STORED CONTRACT')
     console.log(result)
 }
@@ -13,9 +13,10 @@ async function readContract() {
 async function runContract() {
     console.log('RUNNING CONTRACT')
     let id = await scrypta.createAddress('123456', false)
-    let request = await scrypta.createContractRequest(id.walletstore, '123456', {contract: 'Le9G4AYSGbGqonH7QEjFHDeVAMSPxK9KWt', function: 'index', params: {type: true}})
-    console.log(request)
+    scrypta.staticnodes = true
+    scrypta.debug = true
+    let request = await scrypta.createContractRequest(id.walletstore, '123456', {contract: 'LcD7AGaY74xvVxDg3NkKjfP6QpG8Pmxpnu', function: 'search', params: {address: 'LchzGX6vqmanceCzNUMTk5cmnt1p6knGgT'}})
     let result = await scrypta.sendContractRequest(request, 'https://idanodejs01.scryptachain.org')
-    console.log(result)
 }
+//readContract()
 runContract()
