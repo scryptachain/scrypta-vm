@@ -14,6 +14,7 @@ async function runContract() {
     console.log('RUNNING CONTRACT')
     let id = await scrypta.createAddress('123456', false)
     let request = await scrypta.createContractRequest(id.walletstore, '123456', {contract: 'Le9G4AYSGbGqonH7QEjFHDeVAMSPxK9KWt', function: 'index', params: {type: true}})
+    console.log(request)
     let result = await scrypta.sendContractRequest(request, 'https://idanodejs01.scryptachain.org')
     console.log(result)
 }
