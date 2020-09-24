@@ -3,7 +3,6 @@ const compressor = require('lzutf8')
 const fs = require('fs')
 const ScryptaCore = require('@scrypta/core')
 const v001 = require('../compiler/0.0.1')
-var MongoClient = require('mongodb').MongoClient
 const crypto = require('crypto')
 var CoinKey = require('coinkey')
 
@@ -26,6 +25,7 @@ function prepare(toCompile, request = '', local = false, address) {
                 read(query, limit) {
                     return new Promise(response => {
                         if (local === true) {
+                            let MongoClient = require('mongodb').MongoClient
                             MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
                                 var db = client.db(global['db_name'])
                                 if (err) {
@@ -63,6 +63,7 @@ function prepare(toCompile, request = '', local = false, address) {
                 insert(object) {
                     if (local === true) {
                         return new Promise(response => {
+                            let MongoClient = require('mongodb').MongoClient
                             MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
                                 var db = client.db(global['db_name'])
                                 if (err) {
@@ -87,6 +88,7 @@ function prepare(toCompile, request = '', local = false, address) {
                 update(query, object) {
                     if (local === true) {
                         return new Promise(response => {
+                            let MongoClient = require('mongodb').MongoClient
                             MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
                                 var db = client.db(global['db_name'])
                                 if (err) {
@@ -108,6 +110,7 @@ function prepare(toCompile, request = '', local = false, address) {
                 delete(query) {
                     if (local === true) {
                         return new Promise(response => {
+                            let MongoClient = require('mongodb').MongoClient
                             MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
                                 var db = client.db(global['db_name'])
                                 if (err) {
@@ -163,6 +166,7 @@ function prepare(toCompile, request = '', local = false, address) {
 
 function returnLocalContract(address) {
     return new Promise(async response => {
+        let MongoClient = require('mongodb').MongoClient
         MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
             var db = client.db(global['db_name'])
             if (err) {
