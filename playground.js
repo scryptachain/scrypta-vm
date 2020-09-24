@@ -5,7 +5,7 @@ let scrypta = new ScryptaCore
 scrypta.staticnodes = true
 
 async function readContract() {
-    let result = await vm.read('LcD7AGaY74xvVxDg3NkKjfP6QpG8Pmxpnu', true)
+    let result = await vm.read('LcD7AGaY74xvVxDg3NkKjfP6QpG8Pmxpnu', false, '1.0.3')
     console.log('READING STORED CONTRACT')
     console.log(result)
 }
@@ -19,5 +19,5 @@ async function runContract() {
     let result = await scrypta.sendContractRequest(request, 'https://idanodejs02.scryptachain.org')
     console.log(result)
 }
-//readContract()
-runContract()
+readContract()
+//runContract()

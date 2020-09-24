@@ -190,7 +190,7 @@ function returnLocalContract(address) {
     })
 }
 
-function read(address, local = false) {
+function read(address, local = false, version = 'latest') {
     return new Promise(async response => {
         try {
             let scrypta = new ScryptaCore
@@ -208,8 +208,17 @@ function read(address, local = false) {
                 let genesisindex = contractBlockchain.data.length - 1
                 let genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
                 let versionindex
-                if (genesis.immutable === undefined || genesis.immutable === false) {
-                    versionindex = 0
+                if (genesis.immutable === undefined || genesis.immutable === false || genesis.immutable === 'false') {
+                    if(version === 'latest'){
+                        versionindex = 0
+                    }else{
+                        for(let k in contractBlockchain.data){
+                            let check = contractBlockchain.data[k]
+                            if(check.refID === version){
+                                versionindex = k
+                            }
+                        }
+                    }
                 } else {
                     versionindex = genesisindex
                 }
