@@ -1,6 +1,6 @@
 {
   "name": "@scrypta/vm",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Scrypta Virtual Machine to run Smart Contracts",
   "private": false,
   "main": "src/svm.js",

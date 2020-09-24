@@ -294,16 +294,35 @@ function run(address, request, local = false) {
                         } else {
                             contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
                         }
-                        let genesisindex = contractBlockchain.data.length - 1
-                        let genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
+                        let genesis
+                        let genesisindex
+                        let version
                         let versionindex
-                        if (genesis.immutable === undefined || genesis.immutable === false) {
-                            versionindex = 0
+                        if (contractBlockchain.data.data === undefined) {
+                            genesisindex = contractBlockchain.data.length - 1
+                            genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
+                            if (genesis.immutable === undefined || genesis.immutable === false || genesis.immutable === 'false') {
+                                if (version === 'latest') {
+                                    versionindex = 0
+                                } else {
+                                    for (let k in contractBlockchain.data) {
+                                        let check = contractBlockchain.data[k]
+                                        if (check.refID === version) {
+                                            versionindex = k
+                                        }
+                                    }
+                                }
+                            } else {
+                                versionindex = genesisindex
+                            }
+                            version = contractBlockchain.data[versionindex]
                         } else {
-                            versionindex = genesisindex
+                            genesis = JSON.parse(contractBlockchain.data.data.message)
+                            version = contractBlockchain.data
                         }
-                        if (contractBlockchain.data[versionindex] !== undefined) {
-                            let data = contractBlockchain.data[versionindex].data
+
+                        if (version !== undefined) {
+                            let data = version.data
                             let verify = await scrypta.verifyMessage(data.pubkey, data.signature, data.message)
                             let contract = JSON.parse(data.message)
                             if (verify !== false) {
