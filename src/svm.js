@@ -208,14 +208,13 @@ function read(address, local = false, version = 'latest') {
 
                 let genesis
                 let genesisindex
-                let version
                 let versionindex
                 if (contractBlockchain.data.data === undefined) {
-                    genesisindex = contractBlockchain.data.length - 1
+                    genesisindex = 0
                     genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
                     if (genesis.immutable === undefined || genesis.immutable === false || genesis.immutable === 'false') {
-                        if (version === 'latest') {
-                            versionindex = 0
+                        if (version === 'latest' || version === undefined) {
+                            versionindex = contractBlockchain.data.length - 1
                         } else {
                             for (let k in contractBlockchain.data) {
                                 let check = contractBlockchain.data[k]
@@ -271,7 +270,7 @@ function read(address, local = false, version = 'latest') {
     })
 }
 
-function run(address, request, local = false) {
+function run(address, request, local = false, version = 'latest') {
     return new Promise(async response => {
         try {
             let scrypta = new ScryptaCore
@@ -296,14 +295,13 @@ function run(address, request, local = false) {
                         }
                         let genesis
                         let genesisindex
-                        let version
                         let versionindex
                         if (contractBlockchain.data.data === undefined) {
-                            genesisindex = contractBlockchain.data.length - 1
+                            genesisindex = 0
                             genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
                             if (genesis.immutable === undefined || genesis.immutable === false || genesis.immutable === 'false') {
-                                if (version === 'latest') {
-                                    versionindex = 0
+                                if (version === 'latest' || version === undefined) {
+                                    versionindex = contractBlockchain.data.length - 1
                                 } else {
                                     for (let k in contractBlockchain.data) {
                                         let check = contractBlockchain.data[k]
@@ -320,7 +318,6 @@ function run(address, request, local = false) {
                             genesis = JSON.parse(contractBlockchain.data.data.message)
                             version = contractBlockchain.data
                         }
-
                         if (version !== undefined) {
                             let data = version.data
                             let verify = await scrypta.verifyMessage(data.pubkey, data.signature, data.message)

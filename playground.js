@@ -148,8 +148,9 @@ async function runContract() {
         "data_received": {},
         "generated": 8.0994555
     }})
-    let result = await scrypta.sendContractRequest(request, 'http://localhost:3001')
-    console.log(result)
+    // let result = await scrypta.sendContractRequest(request, 'http://localhost:3001')
+    let run = await vm.run('Le9G4AYSGbGqonH7QEjFHDeVAMSPxK9KWt', request, true, 'latest')
+    console.log(run)
 }
 // readContract()
 runContract()
