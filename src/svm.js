@@ -2,7 +2,8 @@ const { NodeVM } = require('vm2')
 const compressor = require('lzutf8')
 const fs = require('fs')
 const ScryptaCore = require('@scrypta/core')
-const v001 = require('../compiler/0.0.1')
+const compiler = require('@scrypta/compiler')
+const v001 = compiler.v001
 const crypto = require('crypto')
 var CoinKey = require('coinkey')
 
@@ -14,6 +15,17 @@ if (global['db_options'] === undefined) {
 }
 if (global['db_name'] === undefined) {
     global['db_name'] = 'idanodejs'
+}
+
+async function test(code, request = '') {
+    let compiled = await v001.compiler(code.toString().trim(), request, false)
+    if (compiled !== false) {
+        contract.functions = compiled.functions
+        contract.code = compiled.code
+        response(contract)
+    } else {
+        response(false)
+    }
 }
 
 function prepare(toCompile, request = '', local = false, address) {
@@ -373,3 +385,4 @@ function run(address, request, local = false, version = 'latest') {
 
 exports.run = run
 exports.read = read
+exports.test = test
