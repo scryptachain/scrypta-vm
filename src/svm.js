@@ -357,8 +357,8 @@ function run(address, request, local = false, version = 'latest') {
                         } else {
                             response(false)
                         }
-                    } else {
-                        let toCompile = fs.readFileSync(address)
+                    } else if(address.indexOf('local:') !== -1){
+                        let toCompile = fs.readFileSync(address.replace('local:',''))
                         let code = await prepare(toCompile, request, local, address)
                         if (code !== false) {
                             if (code[request.message.function] !== undefined) {
@@ -370,6 +370,21 @@ function run(address, request, local = false, version = 'latest') {
                         } else {
                             response(false)
                         }
+                    } else if(address.indexOf('code:') !== -1){
+                        let toCompile = Buffer.from(address.replace('code:',''), 'hex').toString('utf-8')
+                        let code = await prepare(toCompile, request, local, address)
+                        if (code !== false) {
+                            if (code[request.message.function] !== undefined) {
+                                let result = await code[request.message.function](request.message.params)
+                                response(result)
+                            } else {
+                                response(false)
+                            }
+                        } else {
+                            response(false)
+                        }
+                    } else {
+                        response(false)
                     }
                 } else {
                     response(false)

@@ -4,20 +4,45 @@ const ScryptaCore = require('@scrypta/core')
 let scrypta = new ScryptaCore
 scrypta.staticnodes = true
 
-async function readContract() {
-    let result = await vm.read('LcD7AGaY74xvVxDg3NkKjfP6QpG8Pmxpnu', false, '1.0.3')
-    console.log('READING STORED CONTRACT')
-    console.log(result)
+const express = require('express')
+const app = express()
+var cors = require('cors')
+const port = 4498
+var bodyParser = require('body-parser')
+
+app.use(cors())
+app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.json())
+
+app.get('/', async (req, res) => {
+    res.send({message: 'Playground working', status: 'OK'})
+})
+
+app.post('/read', async (req, res) => {
+    let result = await readContract(req.body)
+    res.send(result)
+})
+
+app.post('/run', async (req, res) => {
+    let result = await runContract(req.body)
+    res.send(result)
+})
+
+app.listen(port, () => console.log(`Scrypta playground listening on port ${port}!`))
+
+function readContract(request) {
+    return new Promise(async response => {
+        let result = await vm.read(request.address, true, request.version)
+        response(result)
+    })
 }
 
-async function runContract() {
+async function runContract(request) {
     console.log('RUNNING CONTRACT')
-    let id = await scrypta.createAddress('123456', false)
-    scrypta.staticnodes = true
-    scrypta.debug = true
-    let request = await scrypta.createContractRequest(id.walletstore, '123456', {contract: 'Le9G4AYSGbGqonH7QEjFHDeVAMSPxK9KWt', function: "index", params: {type: true}})
-    let result = await scrypta.sendContractRequest(request, 'http://localhost:3001')
-    console.log(result)
+    return new Promise(async response => {
+        scrypta.staticnodes = true
+        scrypta.debug = true
+        let result = await vm.run(request.address, request.request, true, request.version)
+        response(result)
+    })
 }
-// readContract()
-runContract()
