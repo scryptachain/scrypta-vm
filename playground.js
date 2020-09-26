@@ -3,6 +3,7 @@ const fs = require('fs')
 const ScryptaCore = require('@scrypta/core')
 let scrypta = new ScryptaCore
 scrypta.staticnodes = true
+const log = require('log-to-file');
 
 const express = require('express')
 const app = express()
@@ -38,14 +39,17 @@ function readContract(request) {
 }
 
 async function runContract(request) {
-    console.log('RUNNING CONTRACT')
+    log('RUNNING CONTRACT')
+    log(JSON.stringify(request))
     return new Promise(async response => {
         if (request.address !== undefined && request.request !== undefined) {
             scrypta.staticnodes = true
             scrypta.debug = true
             let result = await vm.run(request.address, request.request, true, 'latest')
+            log(result)
             response(result)
         }else{
+            log(response)
             response('INVALID REQUEST')
         }
     })

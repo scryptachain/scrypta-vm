@@ -144,7 +144,7 @@ function prepare(toCompile, request = '', local = false, address) {
             }
 
             if (compiled !== false) {
-                if (local === true && address.indexOf('/') !== -1) {
+                if (local === true && (address.indexOf('local:') !== -1 || address.indexOf('code:') !== -1)) {
                     const hash = crypto.createHash('sha256').update(address).digest('hex')
                     var temp = new CoinKey(Buffer.from(hash, 'hex'), {
                         private: 0xae,
