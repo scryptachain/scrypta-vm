@@ -294,57 +294,62 @@ function run(address, request, local = false, version = 'latest') {
             if (local) {
                 scrypta.mainnetIdaNodes = ['http://localhost:3001']
             }
-            let validateRequest = await (scrypta.verifyMessage(request.pubkey, request.signature, request.message))
-            if (validateRequest !== false) {
-                try {
-                    request.message = JSON.parse(JSON.parse(Buffer.from(request.message, 'hex').toString('utf8')))
-                } catch (e) {
-                    request.message = JSON.parse(Buffer.from(request.message, 'hex').toString('utf8'))
-                }
-                if (request.message.function !== undefined && request.message.params !== undefined) {
-                    if (address.indexOf('/') === -1) {
-                        let contractBlockchain
-                        if (local) {
-                            contractBlockchain = await returnLocalContract(address)
-                        } else {
-                            contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
-                        }
-                        let genesis
-                        let genesisindex
-                        let versionindex
-                        if (contractBlockchain.data.data === undefined) {
-                            genesisindex = 0
-                            genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
-                            if (genesis.immutable === undefined || genesis.immutable === false || genesis.immutable === 'false') {
-                                if (version === 'latest' || version === undefined) {
-                                    versionindex = contractBlockchain.data.length - 1
-                                } else {
-                                    for (let k in contractBlockchain.data) {
-                                        let check = contractBlockchain.data[k]
-                                        if (check.refID === version) {
-                                            versionindex = k
+            if(request.signature !== undefined && request.message !== undefined && request.pubkey !== undefined){
+                let validateRequest = await (scrypta.verifyMessage(request.pubkey, request.signature, request.message))
+                if (validateRequest !== false) {
+                    try {
+                        request.message = JSON.parse(JSON.parse(Buffer.from(request.message, 'hex').toString('utf8')))
+                    } catch (e) {
+                        request.message = JSON.parse(Buffer.from(request.message, 'hex').toString('utf8'))
+                    }
+                    if (request.message.function !== undefined && request.message.params !== undefined) {
+
+                        if (address.indexOf('local:') === -1 && address.indexOf('code:') === -1) {
+                            let contractBlockchain
+                            if (local) {
+                                contractBlockchain = await returnLocalContract(address)
+                            } else {
+                                contractBlockchain = await scrypta.post('/read', { address: address, protocol: 'ida://' })
+                            }
+                            let genesis
+                            let genesisindex
+                            let versionindex
+                            if (contractBlockchain.data.data === undefined) {
+                                genesisindex = 0
+                                genesis = JSON.parse(contractBlockchain.data[genesisindex].data.message)
+                                if (genesis.immutable === undefined || genesis.immutable === false || genesis.immutable === 'false') {
+                                    if (version === 'latest' || version === undefined) {
+                                        versionindex = contractBlockchain.data.length - 1
+                                    } else {
+                                        for (let k in contractBlockchain.data) {
+                                            let check = contractBlockchain.data[k]
+                                            if (check.refID === version) {
+                                                versionindex = k
+                                            }
                                         }
                                     }
+                                } else {
+                                    versionindex = genesisindex
                                 }
+                                version = contractBlockchain.data[versionindex]
                             } else {
-                                versionindex = genesisindex
+                                genesis = JSON.parse(contractBlockchain.data.data.message)
+                                version = contractBlockchain.data
                             }
-                            version = contractBlockchain.data[versionindex]
-                        } else {
-                            genesis = JSON.parse(contractBlockchain.data.data.message)
-                            version = contractBlockchain.data
-                        }
-                        if (version !== undefined) {
-                            let data = version.data
-                            let verify = await scrypta.verifyMessage(data.pubkey, data.signature, data.message)
-                            let contract = JSON.parse(data.message)
-                            if (verify !== false) {
-                                let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
-                                let code = await prepare(toCompile, request, local, address)
-                                if (code !== false) {
-                                    if (code[request.message.function] !== undefined) {
-                                        let result = await code[request.message.function](request.message.params)
-                                        response(result)
+                            if (version !== undefined) {
+                                let data = version.data
+                                let verify = await scrypta.verifyMessage(data.pubkey, data.signature, data.message)
+                                let contract = JSON.parse(data.message)
+                                if (verify !== false) {
+                                    let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
+                                    let code = await prepare(toCompile, request, local, address)
+                                    if (code !== false) {
+                                        if (code[request.message.function] !== undefined) {
+                                            let result = await code[request.message.function](request.message.params)
+                                            response(result)
+                                        } else {
+                                            response(false)
+                                        }
                                     } else {
                                         response(false)
                                     }
@@ -354,29 +359,29 @@ function run(address, request, local = false, version = 'latest') {
                             } else {
                                 response(false)
                             }
-                        } else {
-                            response(false)
-                        }
-                    } else if(address.indexOf('local:') !== -1){
-                        let toCompile = fs.readFileSync(address.replace('local:',''))
-                        let code = await prepare(toCompile, request, local, address)
-                        if (code !== false) {
-                            if (code[request.message.function] !== undefined) {
-                                let result = await code[request.message.function](request.message.params)
-                                response(result)
+                        } else if(address.indexOf('local:') !== -1){
+                            let toCompile = fs.readFileSync(address.replace('local:',''))
+                            let code = await prepare(toCompile, request, local, address)
+                            if (code !== false) {
+                                if (code[request.message.function] !== undefined) {
+                                    let result = await code[request.message.function](request.message.params)
+                                    response(result)
+                                } else {
+                                    response(false)
+                                }
                             } else {
                                 response(false)
                             }
-                        } else {
-                            response(false)
-                        }
-                    } else if(address.indexOf('code:') !== -1){
-                        let toCompile = Buffer.from(address.replace('code:',''), 'hex').toString('utf-8')
-                        let code = await prepare(toCompile, request, local, address)
-                        if (code !== false) {
-                            if (code[request.message.function] !== undefined) {
-                                let result = await code[request.message.function](request.message.params)
-                                response(result)
+                        } else if(address.indexOf('code:') !== -1){
+                            let toCompile = Buffer.from(address.replace('code:',''), 'hex').toString('utf-8')
+                            let code = await prepare(toCompile, request, local, address)
+                            if (code !== false) {
+                                if (code[request.message.function] !== undefined) {
+                                    let result = await code[request.message.function](request.message.params)
+                                    response(result)
+                                } else {
+                                    response(false)
+                                }
                             } else {
                                 response(false)
                             }
@@ -389,8 +394,8 @@ function run(address, request, local = false, version = 'latest') {
                 } else {
                     response(false)
                 }
-            } else {
-                response(false)
+            }else{
+                response('INVALID REQUEST')
             }
         } catch (e) {
             response(e)

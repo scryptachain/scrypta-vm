@@ -15,7 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 
 app.get('/', async (req, res) => {
-    res.send({message: 'Playground working', status: 'OK'})
+    res.send({ message: 'Playground working', status: 'OK' })
 })
 
 app.post('/read', async (req, res) => {
@@ -40,9 +40,13 @@ function readContract(request) {
 async function runContract(request) {
     console.log('RUNNING CONTRACT')
     return new Promise(async response => {
-        scrypta.staticnodes = true
-        scrypta.debug = true
-        let result = await vm.run(request.address, request.request, true, request.version)
-        response(result)
+        if (request.address !== undefined && request.request !== undefined) {
+            scrypta.staticnodes = true
+            scrypta.debug = true
+            let result = await vm.run(request.address, request.request, true, 'latest')
+            response(result)
+        }else{
+            response('INVALID REQUEST')
+        }
     })
 }
