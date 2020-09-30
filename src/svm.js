@@ -164,8 +164,12 @@ function prepare(toCompile, request = '', local = false, address) {
                         }
                     }
                 })
-                let contract = vm.run(compiled.code, 'svm.js')
-                response(contract)
+                try{
+                    let contract = vm.run(compiled.code, 'svm.js')
+                    response(contract)
+                }catch(e){
+                    response(e)
+                }
             } else {
                 response(false)
             }
@@ -345,8 +349,12 @@ function run(address, request, local = false, version = 'latest') {
                                     let code = await prepare(toCompile, request, local, address)
                                     if (code !== false) {
                                         if (code[request.message.function] !== undefined) {
-                                            let result = await code[request.message.function](request.message.params)
-                                            response(result)
+                                            try{
+                                                let result = await code[request.message.function](request.message.params)
+                                                response(result)
+                                            }catch(e){
+                                                response(e)
+                                            }
                                         } else {
                                             response(false)
                                         }
@@ -364,8 +372,12 @@ function run(address, request, local = false, version = 'latest') {
                             let code = await prepare(toCompile, request, local, address)
                             if (code !== false) {
                                 if (code[request.message.function] !== undefined) {
-                                    let result = await code[request.message.function](request.message.params)
-                                    response(result)
+                                    try{
+                                        let result = await code[request.message.function](request.message.params)
+                                        response(result)
+                                    }catch(e){
+                                        response(e)
+                                    }
                                 } else {
                                     response(false)
                                 }
@@ -377,8 +389,12 @@ function run(address, request, local = false, version = 'latest') {
                             let code = await prepare(toCompile, request, local, address)
                             if (code !== false) {
                                 if (code[request.message.function] !== undefined) {
-                                    let result = await code[request.message.function](request.message.params)
-                                    response(result)
+                                    try{
+                                        let result = await code[request.message.function](request.message.params)
+                                        response(result)
+                                    }catch(e){
+                                        response(e)
+                                    }
                                 } else {
                                     response(false)
                                 }
