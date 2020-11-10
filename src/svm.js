@@ -63,6 +63,7 @@ function prepare(toCompile, request = '', local = false, address) {
                                         client.close()
                                         response(array)
                                     } catch (e) {
+                                        client.close()
                                         response(false)
                                     }
                                 }
@@ -76,22 +77,26 @@ function prepare(toCompile, request = '', local = false, address) {
                     if (local === true) {
                         return new Promise(response => {
                             let MongoClient = require('mongodb').MongoClient
-                            MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
-                                var db = client.db(global['db_name'])
-                                if (err) {
-                                    client.close()
-                                    response(err)
-                                } else {
-                                    try {
-                                        let result = await db.collection(address).insertOne(object);
+                            let inserted = false
+                            while(!inserted){
+                                MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                    var db = client.db(global['db_name'])
+                                    if (err) {
                                         client.close()
-                                        response(result)
-                                    } catch (e) {
-                                        client.close()
-                                        response(false)
+                                        response(err)
+                                    } else {
+                                        try {
+                                            let result = await db.collection(address).insertOne(object, { w: 1, j: true });
+                                            inserted = true
+                                            client.close()
+                                            response(result)
+                                        } catch (e) {
+                                            client.close()
+                                            response(false)
+                                        }
                                     }
-                                }
-                            })
+                                })
+                            }
                         })
                     } else {
                         response(false)
@@ -101,21 +106,26 @@ function prepare(toCompile, request = '', local = false, address) {
                     if (local === true) {
                         return new Promise(response => {
                             let MongoClient = require('mongodb').MongoClient
-                            MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
-                                var db = client.db(global['db_name'])
-                                if (err) {
-                                    client.close()
-                                    response(err)
-                                } else {
-                                    try {
-                                        let result = await db.collection(address).updateOne(query, object)
+                            let updated = false
+                            while (!updated) {
+                                MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                    var db = client.db(global['db_name'])
+                                    if (err) {
                                         client.close()
-                                        response(result)
-                                    } catch (e) {
-                                        response(false)
+                                        response(err)
+                                    } else {
+                                        try {
+                                            let result = await db.collection(address).updateOne(query, object, { writeConcern: { w: 1, j: true } })
+                                            client.close()
+                                            updated = true
+                                            response(result)
+                                        } catch (e) {
+                                            client.close()
+                                            response(false)
+                                        }
                                     }
-                                }
-                            })
+                                })
+                            }
                         })
                     }
                 },
