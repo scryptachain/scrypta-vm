@@ -41,7 +41,7 @@ function prepare(toCompile, request = '', local = false, address) {
                             MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
                                 var db = client.db(global['db_name'])
                                 if (err) {
-                                    client.close()
+                                    client.close()                                    
                                     response(err)
                                 } else {
                                     try {
@@ -78,12 +78,13 @@ function prepare(toCompile, request = '', local = false, address) {
                         return new Promise(response => {
                             let MongoClient = require('mongodb').MongoClient
                             let inserted = false
-                            while(!inserted){
-                                MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                            MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                while (!inserted) {
                                     var db = client.db(global['db_name'])
                                     if (err) {
                                         client.close()
-                                        response(err)
+                                        inserted = true
+                                        this.inserted(object)
                                     } else {
                                         try {
                                             let result = await db.collection(address).insertOne(object, { w: 1, j: true });
@@ -95,8 +96,9 @@ function prepare(toCompile, request = '', local = false, address) {
                                             response(false)
                                         }
                                     }
-                                })
-                            }
+                                }
+                            })
+
                         })
                     } else {
                         response(false)
@@ -106,12 +108,14 @@ function prepare(toCompile, request = '', local = false, address) {
                     if (local === true) {
                         return new Promise(response => {
                             let MongoClient = require('mongodb').MongoClient
-                            let updated = false
-                            while (!updated) {
-                                MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                            MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
+                                let updated = false
+                                while (!updated) {
                                     var db = client.db(global['db_name'])
                                     if (err) {
                                         client.close()
+                                        updated = true
+                                        this.update(query, object)
                                         response(err)
                                     } else {
                                         try {
@@ -124,8 +128,8 @@ function prepare(toCompile, request = '', local = false, address) {
                                             response(false)
                                         }
                                     }
-                                })
-                            }
+                                }
+                            })
                         })
                     }
                 },
@@ -174,10 +178,10 @@ function prepare(toCompile, request = '', local = false, address) {
                         }
                     }
                 })
-                try{
+                try {
                     let contract = vm.run(compiled.code, 'svm.js')
                     response(contract)
-                }catch(e){
+                } catch (e) {
                     response(e)
                 }
             } else {
@@ -308,7 +312,7 @@ function run(address, request, local = false, version = 'latest') {
             if (local) {
                 scrypta.mainnetIdaNodes = ['http://localhost:3001']
             }
-            if(request.signature !== undefined && request.message !== undefined && request.pubkey !== undefined){
+            if (request.signature !== undefined && request.message !== undefined && request.pubkey !== undefined) {
                 let validateRequest = await (scrypta.verifyMessage(request.pubkey, request.signature, request.message))
                 if (validateRequest !== false) {
                     try {
@@ -359,10 +363,10 @@ function run(address, request, local = false, version = 'latest') {
                                     let code = await prepare(toCompile, request, local, address)
                                     if (code !== false) {
                                         if (code[request.message.function] !== undefined) {
-                                            try{
+                                            try {
                                                 let result = await code[request.message.function](request.message.params)
                                                 response(result)
-                                            }catch(e){
+                                            } catch (e) {
                                                 response(e)
                                             }
                                         } else {
@@ -377,15 +381,15 @@ function run(address, request, local = false, version = 'latest') {
                             } else {
                                 response(false)
                             }
-                        } else if(address.indexOf('local:') !== -1){
-                            let toCompile = fs.readFileSync(address.replace('local:',''))
+                        } else if (address.indexOf('local:') !== -1) {
+                            let toCompile = fs.readFileSync(address.replace('local:', ''))
                             let code = await prepare(toCompile, request, local, address)
                             if (code !== false) {
                                 if (code[request.message.function] !== undefined) {
-                                    try{
+                                    try {
                                         let result = await code[request.message.function](request.message.params)
                                         response(result)
-                                    }catch(e){
+                                    } catch (e) {
                                         response(e)
                                     }
                                 } else {
@@ -394,15 +398,15 @@ function run(address, request, local = false, version = 'latest') {
                             } else {
                                 response(false)
                             }
-                        } else if(address.indexOf('code:') !== -1){
-                            let toCompile = Buffer.from(address.replace('code:',''), 'hex').toString('utf-8')
+                        } else if (address.indexOf('code:') !== -1) {
+                            let toCompile = Buffer.from(address.replace('code:', ''), 'hex').toString('utf-8')
                             let code = await prepare(toCompile, request, local, address)
                             if (code !== false) {
                                 if (code[request.message.function] !== undefined) {
-                                    try{
+                                    try {
                                         let result = await code[request.message.function](request.message.params)
                                         response(result)
-                                    }catch(e){
+                                    } catch (e) {
                                         response(e)
                                     }
                                 } else {
@@ -420,7 +424,7 @@ function run(address, request, local = false, version = 'latest') {
                 } else {
                     response(false)
                 }
-            }else{
+            } else {
                 response('INVALID REQUEST')
             }
         } catch (e) {
