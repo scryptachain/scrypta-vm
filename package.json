@@ -15,7 +15,7 @@
   "author": "Scrypta Task Force",
   "license": "MIT",
   "dependencies": {
-    "@scrypta/compiler": "^1.0.1",
+    "@scrypta/compiler": "^1.0.2",
     "@scrypta/core": "^3.0.2",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",

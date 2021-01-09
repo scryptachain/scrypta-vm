@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const vm = require('./svm')
 const fs = require('fs')
 const compressor = require('lzutf8')
@@ -5,141 +7,210 @@ const argv = require('minimist')(process.argv.slice(2))
 const ScryptaCore = require('@scrypta/core')
 var CoinKey = require('coinkey')
 var crypto = require('crypto')
+var childProcess = require('child_process');
+const axios = require('axios')
 
-async function publishModule() {
+async function cli() {
+    if (argv._.indexOf('publish') !== -1 && argv.m !== undefined && argv.i !== undefined) {
+        console.log('Publishing Smart Contract')
+        publish()
+    } else if (argv._.indexOf('run') !== -1) {
+        run('./playground.js', function (err) {
+            if (err) throw err;
+            console.log('finished running some-script.js');
+        });
+    } else if (argv._.indexOf('test') !== -1 && argv.m !== undefined && argv.f !== undefined && argv.p !== undefined) {
+        let code = false
+        try {
+            code = fs.readFileSync(argv.m)
+        } catch (e) {
+            console.log('Can\'t read code, please make sure path defined in `m` is valid.')
+        }
+        if (code !== false) {
+            let response = await axios.post('http://localhost:4498/run', {
+                address: argv.m,
+                request: {
+                    function: argv.f,
+                    params: argv.p
+                }
+            })
+            console.log(response.data)
+        }
+    } else if(argv._.indexOf('read') !== -1 && argv.m !== undefined){
+        let code = false
+        try {
+            code = fs.readFileSync(argv.m)
+        } catch (e) {
+            console.log('Can\'t read code, please make sure path defined in `m` is valid.')
+        }
+        if (code !== false) {
+            let response = await axios.post('http://localhost:4498/read', {
+                address: argv.m,
+                version: 'latest'
+            })
+            console.log(response.data)
+        }
+    }
+}
+async function publish() {
     if (argv.m !== undefined && argv.i !== undefined) {
         let name
         let author
         let version
         let description
         let immutable
-        let code = fs.readFileSync(argv.m)
-        let manifest = code.toString().match(/\/\*(\*(?!\/)|[^*])*\*\//gi)
-        manifest = manifest[0].replace('/**', '')
-        manifest = manifest.replace('**/', '')
-        manifest = manifest.replace(new RegExp('\n', 'g'), '')
-        manifest = manifest.split('*')
-
-        for (let k in manifest) {
-            let definition = manifest[k].trim().split(':')
-            if (definition[1] !== undefined) {
-                if (definition[0] === 'NAME') {
-                    name = definition[1].trim()
-                }
-                if (definition[0] === 'AUTHOR') {
-                    author = definition[1].trim()
-                }
-                if (definition[0] === 'VERSION') {
-                    version = definition[1].trim()
-                }
-                if (definition[0] === 'DESCRIPTION') {
-                    description = definition[1].trim()
-                }
-                if (definition[0] === 'IMMUTABLE') {
-                    immutable = definition[1].trim()
-                }
-            }
+        let code = false
+        try {
+            code = fs.readFileSync(argv.m)
+        } catch (e) {
+            console.log('Can\'t read code, please make sure path defined in `m` is valid.')
         }
+        if (code !== false) {
+            let manifest = code.toString().match(/\/\*(\*(?!\/)|[^*])*\*\//gi)
+            manifest = manifest[0].replace('/**', '')
+            manifest = manifest.replace('**/', '')
+            manifest = manifest.replace(new RegExp('\n', 'g'), '')
+            manifest = manifest.split('*')
 
-        if (name !== undefined && author !== undefined && version !== undefined) {
-            manifest = {
-                v: 1,
-                name: name,
-                author: author,
-                version: version,
-                description: description,
-                immutable: immutable,
-                code: compressor.compress(code, { outputEncoding: 'Base64' })
+            for (let k in manifest) {
+                let definition = manifest[k].trim().split(':')
+                if (definition[1] !== undefined) {
+                    if (definition[0] === 'NAME') {
+                        name = definition[1].trim()
+                    }
+                    if (definition[0] === 'AUTHOR') {
+                        author = definition[1].trim()
+                    }
+                    if (definition[0] === 'VERSION') {
+                        version = definition[1].trim()
+                    }
+                    if (definition[0] === 'DESCRIPTION') {
+                        description = definition[1].trim()
+                    }
+                    if (definition[0] === 'IMMUTABLE') {
+                        immutable = definition[1].trim()
+                    }
+                }
             }
-            let scrypta = new ScryptaCore
-            scrypta.staticnodes = true
-            let identity = argv.i
-            let pubkey = await scrypta.getPublicKey(identity)
-            let address = await scrypta.getAddressFromPubKey(pubkey)
 
-            console.log('AUTHOR ADDRESS IS: ' + address)
-            let balance = await scrypta.get('/balance/' + address)
+            if (name !== undefined && author !== undefined && version !== undefined) {
+                manifest = {
+                    v: 1,
+                    name: name,
+                    author: author,
+                    version: version,
+                    description: description,
+                    immutable: immutable,
+                    code: compressor.compress(code, { outputEncoding: 'Base64' })
+                }
+                let scrypta = new ScryptaCore
+                scrypta.staticnodes = true
+                let identity = argv.i
+                let pubkey = await scrypta.getPublicKey(identity)
+                let address = await scrypta.getAddressFromPubKey(pubkey)
 
-            const hash = crypto.createHash('sha256').update(identity + ':' + manifest.name).digest('hex')
-            let contract = new CoinKey(Buffer.from(hash, 'hex'), {
-                private: 0xae,
-                public: 0x30,
-                scripthash: 0x0d
-            })
+                console.log('AUTHOR ADDRESS IS: ' + address)
+                let balance = await scrypta.get('/balance/' + address)
 
-            console.log('CONTRACT ADDRESS IS: ' + contract.publicAddress)
-            manifest.address = contract.publicAddress
-            let sid = await scrypta.buildWallet('TEMPORARY', contract.publicAddress, { prv: contract.privateWif, key: contract.publicKey.toString('hex') }, false)
+                const hash = crypto.createHash('sha256').update(identity + ':' + manifest.name).digest('hex')
+                let contract = new CoinKey(Buffer.from(hash, 'hex'), {
+                    private: 0xae,
+                    public: 0x30,
+                    scripthash: 0x0d
+                })
 
-            if (balance.balance > 0.011) {
-                console.log('BALANCE IS: ' + balance.balance + ' LYRA')
-                let genesis_check = await scrypta.post('/read', { address: manifest.address, refID: 'genesis', protocol: 'ida://' })
-                if (genesis_check.data[0] !== undefined) {
-                    let genesis = genesis_check.data[0].data
-                    genesis.contract = JSON.parse(genesis.message)
-                    if (genesis.contract.name === manifest.name && genesis.contract.address === manifest.address) {
-                        console.log('GENESIS EXIST, CHECK IF EXIST VERSION.')
-                        let version_check = await scrypta.post('/read', { address: manifest.address, refID: manifest.version, protocol: 'ida://' })
-                        if (version_check.data[0] === undefined && genesis.contract.version !== manifest.version) {
-                            console.log('PUBLISHING UPDATE ' + manifest.version)
-                            if (genesis.contract.immutable === undefined || genesis.contract.immutable === 'false') {
-                                let signed = await scrypta.signMessage(identity, JSON.stringify(manifest))
-                                let contractBalance = await scrypta.get('/balance/' + manifest.address)
-                                let funded = false
-                                if (contractBalance.balance < 0.002) {
-                                    funded = await fundAddress(manifest.address)
-                                } else {
-                                    funded = true
-                                }
-                                if (funded !== false) {
-                                    let update_written = await scrypta.write(sid, 'TEMPORARY', JSON.stringify(signed), '', manifest.version, 'ida://')
-                                    if (update_written.uuid !== undefined && update_written.txs !== undefined && update_written.txs.length > 0) {
-                                        console.log('UPDATE TRANSACTION WRITTEN CORRECTLY')
+                console.log('CONTRACT ADDRESS IS: ' + contract.publicAddress)
+                manifest.address = contract.publicAddress
+                let sid = await scrypta.buildWallet('TEMPORARY', contract.publicAddress, { prv: contract.privateWif, key: contract.publicKey.toString('hex') }, false)
+
+                if (balance.balance > 0.011) {
+                    console.log('BALANCE IS: ' + balance.balance + ' LYRA')
+                    let genesis_check = await scrypta.post('/read', { address: manifest.address, refID: 'genesis', protocol: 'ida://' })
+                    if (genesis_check.data[0] !== undefined) {
+                        let genesis = genesis_check.data[0].data
+                        genesis.contract = JSON.parse(genesis.message)
+                        if (genesis.contract.name === manifest.name && genesis.contract.address === manifest.address) {
+                            console.log('GENESIS EXIST, CHECK IF EXIST VERSION.')
+                            let version_check = await scrypta.post('/read', { address: manifest.address, refID: manifest.version, protocol: 'ida://' })
+                            if (version_check.data[0] === undefined && genesis.contract.version !== manifest.version) {
+                                console.log('PUBLISHING UPDATE ' + manifest.version)
+                                if (genesis.contract.immutable === undefined || genesis.contract.immutable === 'false') {
+                                    let signed = await scrypta.signMessage(identity, JSON.stringify(manifest))
+                                    let contractBalance = await scrypta.get('/balance/' + manifest.address)
+                                    let funded = false
+                                    if (contractBalance.balance < 0.002) {
+                                        funded = await fundAddress(manifest.address)
                                     } else {
-                                        console.error('ERROR WHILE CREATING TRANSACTION')
+                                        funded = true
+                                    }
+                                    if (funded !== false) {
+                                        let update_written = await scrypta.write(sid, 'TEMPORARY', JSON.stringify(signed), '', manifest.version, 'ida://')
+                                        if (update_written.uuid !== undefined && update_written.txs !== undefined && update_written.txs.length > 0) {
+                                            console.log('UPDATE TRANSACTION WRITTEN CORRECTLY')
+                                        } else {
+                                            console.error('ERROR WHILE CREATING TRANSACTION')
+                                        }
+                                    } else {
+                                        console.log('ERROR WHILE FUNDING ADDRESS')
                                     }
                                 } else {
-                                    console.log('ERROR WHILE FUNDING ADDRESS')
+                                    console.log('CAN\'T UPDATE IMMUTABLE CONTRACT!')
                                 }
                             } else {
-                                console.log('CAN\'T UPDATE IMMUTABLE CONTRACT!')
+                                console.log('VERSION EXIST, PLEASE UPDATE CONTRACT FIRST')
                             }
                         } else {
-                            console.log('VERSION EXIST, PLEASE UPDATE CONTRACT FIRST')
+                            console.log('GENESIS TRANSACTION DOESN\'T MATCH.')
                         }
                     } else {
-                        console.log('GENESIS TRANSACTION DOESN\'T MATCH.')
+                        console.log('SIGNING GENESIS TRANSACTION.')
+                        let signed = await scrypta.signMessage(identity, JSON.stringify(manifest))
+                        let contractBalance = await scrypta.get('/balance/' + manifest.address)
+                        let funded = false
+                        if (contractBalance.balance < 0.01) {
+                            funded = await fundAddress(manifest.address)
+                        } else {
+                            funded = true
+                        }
+                        if (funded !== false) {
+                            let genesis_written = await scrypta.write(sid, 'TEMPORARY', JSON.stringify(signed), '', 'genesis', 'ida://')
+                            if (genesis_written.uuid !== undefined && genesis_written.txs !== undefined && genesis_written.txs.length > 0) {
+                                console.log('GENESIS TRANSACTION WRITTEN CORRECTLY')
+                            } else {
+                                console.error('ERROR WHILE CREATING TRANSACTION')
+                            }
+                        } else {
+                            console.log('ERROR WHILE FUNDING ADDRESS')
+                        }
                     }
                 } else {
-                    console.log('SIGNING GENESIS TRANSACTION.')
-                    let signed = await scrypta.signMessage(identity, JSON.stringify(manifest))
-                    let contractBalance = await scrypta.get('/balance/' + manifest.address)
-                    let funded = false
-                    if (contractBalance.balance < 0.01) {
-                        funded = await fundAddress(manifest.address)
-                    } else {
-                        funded = true
-                    }
-                    if (funded !== false) {
-                        let genesis_written = await scrypta.write(sid, 'TEMPORARY', JSON.stringify(signed), '', 'genesis', 'ida://')
-                        if (genesis_written.uuid !== undefined && genesis_written.txs !== undefined && genesis_written.txs.length > 0) {
-                            console.log('GENESIS TRANSACTION WRITTEN CORRECTLY')
-                        } else {
-                            console.error('ERROR WHILE CREATING TRANSACTION')
-                        }
-                    } else {
-                        console.log('ERROR WHILE FUNDING ADDRESS')
-                    }
+                    console.log('CONTRACT DOESN\'T HAVE REQUIRED BALANCE: ' + balance.balance)
                 }
             } else {
-                console.log('CONTRACT DOESN\'T HAVE REQUIRED BALANCE: ' + balance.balance)
+                console.log('CAN\'T FIND MANIFEST')
             }
-        } else {
-            console.log('CAN\'T FIND MANIFEST')
         }
     } else {
         console.log('PLEASE PROVIDE CONTRACT PATH AND IDENTITY PRIVATE KEY')
     }
+}
+
+function run(scriptPath, callback) {
+    var invoked = false;
+    var process = childProcess.fork(scriptPath);
+
+    process.on('error', function (err) {
+        if (invoked) return;
+        invoked = true;
+        callback(err);
+    });
+
+    process.on('exit', function (code) {
+        if (invoked) return;
+        invoked = true;
+        var err = code === 0 ? null : new Error('exit code ' + code);
+        callback(err);
+    });
 }
 
 async function fundAddress(contractAddress) {
@@ -174,4 +245,4 @@ async function fundAddress(contractAddress) {
     })
 }
 
-publishModule()
+cli()

@@ -4,6 +4,7 @@ const fs = require('fs')
 const ScryptaCore = require('@scrypta/core')
 const compiler = require('@scrypta/compiler')
 const v001 = compiler.v001
+const v002 = compiler.v002
 const crypto = require('crypto')
 var CoinKey = require('coinkey')
 
@@ -31,7 +32,13 @@ async function test(code, request = '') {
 function prepare(toCompile, request = '', local = false, address) {
     return new Promise(async response => {
         try {
-            let compiled = await v001.compiler(toCompile.toString().trim(), request, local)
+            
+            let compiled = false
+            if(toCompile.toString().indexOf('/* Scrypta v0.0.1 */') !== -1){
+                compiled = await v001.compiler(toCompile.toString().trim(), request, local)
+            }else if(toCompile.toString().indexOf('/* Scrypta v0.0.2 */' !== -1)){
+                compiled = await v002.compiler(toCompile.toString().trim(), request, local)
+            }
 
             const dbMock = {
                 read(query, limit) {
@@ -233,6 +240,7 @@ function read(address, local = false, version = 'latest') {
                 scrypta.mainnetIdaNodes = ['http://localhost:3001']
             }
             if (address.indexOf('/') === -1) {
+                console.log('Reading deployed contract.')
                 let contractBlockchain
                 if (local) {
                     contractBlockchain = await returnLocalContract(address)
@@ -287,9 +295,18 @@ function read(address, local = false, version = 'latest') {
                     response(false)
                 }
             } else {
+                console.log('Reading local contract.')
                 let toCompile = fs.readFileSync(address)
-                let compiled = await v001.compiler(toCompile.toString(), '', local)
+                let compiled = false
+                if(toCompile.toString().indexOf('/* Scrypta v0.0.1 */') !== -1){
+                    console.log('Compiling with v0.0.1')
+                    compiled = await v001.compiler(toCompile.toString().trim(), '', local)
+                }else if(toCompile.toString().indexOf('/* Scrypta v0.0.2 */' !== -1)){
+                    console.log('Compiling with v0.0.2')
+                    compiled = await v002.compiler(toCompile.toString().trim(), '', local)
+                }
                 if (compiled !== false) {
+                    console.log('Compilation done, returning contract')
                     let contract = {}
                     contract.functions = compiled.functions
                     contract.code = compiled.code
