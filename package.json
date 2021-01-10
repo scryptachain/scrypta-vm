@@ -1,6 +1,6 @@
 {
   "name": "@scrypta/vm",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "description": "Scrypta Virtual Machine to run Smart Contracts",
   "private": false,
   "main": "src/svm.js",
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "nodemon playground.js --ignore 'db/*'",
+    "start": "node playground.js",
     "deploy": "node ./src/cli.js -m PathToYourContract -i YourPrivKey",
     "pub": "npm publish --access public"
   },

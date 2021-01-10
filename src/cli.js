@@ -17,12 +17,6 @@ async function cli() {
         console.log('Publishing Smart Contract')
         await publish()
         process.exit()
-    } else if (argv._.indexOf('run') !== -1) {
-        const path = require('path').dirname(require.main.filename).replace('/src','')
-        run(path + '/playground.js', function (err) {
-            if (err) throw err;
-            console.log('finished running some-script.js');
-        });
     } else if (argv._.indexOf('test') !== -1 && argv.m !== undefined && argv.f !== undefined && argv.p !== undefined) {
         let code = false
         try {
@@ -227,24 +221,6 @@ async function publish() {
             response(false)
         }
     })
-}
-
-function run(scriptPath, callback) {
-    var invoked = false;
-    var process = childProcess.fork(scriptPath);
-
-    process.on('error', function (err) {
-        if (invoked) return;
-        invoked = true;
-        callback(err);
-    });
-
-    process.on('exit', function (code) {
-        if (invoked) return;
-        invoked = true;
-        var err = code === 0 ? null : new Error('exit code ' + code);
-        callback(err);
-    });
 }
 
 async function fundAddress(contractAddress) {

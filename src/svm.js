@@ -332,14 +332,13 @@ function run(address, request, local = false, version = 'latest') {
             if (request.signature !== undefined && request.message !== undefined && request.pubkey !== undefined) {
                 let validateRequest = await scrypta.verifyMessage(request.pubkey, request.signature, request.message)
                 if (validateRequest !== false) {
-                    console.log('REQUEST IS VALID, RUNNING CONTRACT.')
+                    console.log('REQUEST IS VALID.')
                     try {
                         request.message = JSON.parse(JSON.parse(Buffer.from(request.message, 'hex').toString('utf8')))
                     } catch (e) {
                         request.message = JSON.parse(Buffer.from(request.message, 'hex').toString('utf8'))
                     }
                     if (request.message.function !== undefined && request.message.params !== undefined) {
-
                         if (address.indexOf('local:') === -1 && address.indexOf('code:') === -1) {
                             let contractBlockchain
                             if (local) {
@@ -400,6 +399,7 @@ function run(address, request, local = false, version = 'latest') {
                                 response(false)
                             }
                         } else if (address.indexOf('local:') !== -1) {
+                            console.log('RUNNING LOCAL CONTRACT.')
                             let toCompile = fs.readFileSync(address.replace('local:', ''))
                             let code = await prepare(toCompile, request, local, address)
                             if (code !== false) {
@@ -411,6 +411,7 @@ function run(address, request, local = false, version = 'latest') {
                                         response(e)
                                     }
                                 } else {
+                                    console.log('FUNCTION NOT FOUND!')
                                     response(false)
                                 }
                             } else {
