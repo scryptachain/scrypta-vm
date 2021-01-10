@@ -178,7 +178,7 @@ function prepare(toCompile, request = '', local = false, address) {
                     console: 'inherit',
                     require: {
                         external: {
-                            modules: ['@scrypta/core', 'axios']
+                            modules: ['@scrypta/core', 'axios', 'mathjs']
                         },
                         mock: {
                             db: dbMock
