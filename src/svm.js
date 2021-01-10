@@ -330,8 +330,9 @@ function run(address, request, local = false, version = 'latest') {
                 scrypta.mainnetIdaNodes = ['http://localhost:3001']
             }
             if (request.signature !== undefined && request.message !== undefined && request.pubkey !== undefined) {
-                let validateRequest = await (scrypta.verifyMessage(request.pubkey, request.signature, request.message))
+                let validateRequest = await scrypta.verifyMessage(request.pubkey, request.signature, request.message)
                 if (validateRequest !== false) {
+                    console.log('REQUEST IS VALID, RUNNING CONTRACT.')
                     try {
                         request.message = JSON.parse(JSON.parse(Buffer.from(request.message, 'hex').toString('utf8')))
                     } catch (e) {
@@ -436,13 +437,15 @@ function run(address, request, local = false, version = 'latest') {
                             response(false)
                         }
                     } else {
+                        console.log('REQUEST IS MALFORMED, MISSING FUNCTION OR PARAMS.')
                         response(false)
                     }
                 } else {
+                    console.log('SIGNED REQUEST IS NOT VALID')
                     response(false)
                 }
             } else {
-                response('INVALID REQUEST')
+                response('REQUEST MALFORMED')
             }
         } catch (e) {
             response(e)
