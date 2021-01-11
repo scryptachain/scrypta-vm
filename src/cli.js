@@ -17,7 +17,7 @@ async function cli() {
         console.log('Publishing Smart Contract')
         await publish()
         process.exit()
-    } else if (argv._.indexOf('test') !== -1 && argv.m !== undefined && argv.f !== undefined && argv.p !== undefined) {
+    } else if (argv._.indexOf('test') !== -1 && argv.m !== undefined && argv.f !== undefined) {
         let code = false
         try {
             code = fs.readFileSync(argv.m)
@@ -32,16 +32,25 @@ async function cli() {
                 let runaddr = await scrypta.createAddress('-', false)
                 privkey = runaddr.prv
             }
-
-            let params = argv.p
-            try {
-                params = JSON.parse(params)
-            } catch (e) {
-                console.log(e)
-            }
-            let req = {
-                function: argv.f,
-                params: params
+            let req
+            if(argv.p !== undefined){
+                let params
+                params = argv.p
+                try {
+                    params = JSON.parse(params)
+                } catch (e) {
+                    console.log(e)
+                }
+                req = {
+                    function: argv.f,
+                    params: params
+                }
+            }else if(argv.b !== undefined){
+                let block = await scrypta.get('/analyze/' + argv.b)
+                req = {
+                    function: argv.f,
+                    params: block.data
+                }
             }
 
             const buf = Buffer.from(JSON.stringify(req)).toString('hex')
