@@ -33,49 +33,53 @@ async function cli() {
                 privkey = runaddr.prv
             }
             let req
-            if(argv.p !== undefined){
+            if (argv.p !== undefined) {
                 let params
                 params = argv.p
                 try {
                     params = JSON.parse(params)
                 } catch (e) {
-                    console.log(e)
                 }
                 req = {
                     function: argv.f,
                     params: params
                 }
-            }else if(argv.b !== undefined){
+            } else if (argv.b !== undefined) {
                 let block = await scrypta.get('/analyze/' + argv.b)
                 req = {
                     function: argv.f,
                     params: block.data
                 }
+            } else {
+                req = {
+                    function: argv.f,
+                    params: { }
             }
+        }
 
-            const buf = Buffer.from(JSON.stringify(req)).toString('hex')
-            let signed = await scrypta.signMessage(privkey, buf)
-            
-            let response = await axios.post('http://localhost:4498/run', { request: signed, address: 'local:' + argv.m })
-            console.log(response.data)
-            process.exit()
-        }
-    } else if (argv._.indexOf('read') !== -1 && argv.m !== undefined) {
-        let code = false
-        try {
-            code = fs.readFileSync(argv.m)
-        } catch (e) {
-            console.log('Can\'t read code, please make sure path defined in `m` is valid.')
-        }
-        if (code !== false) {
-            let response = await axios.post('http://localhost:4498/read', {
-                address: argv.m,
-                version: 'latest'
-            })
-            console.log(response.data)
-            process.exit()
-        }
+        const buf = Buffer.from(JSON.stringify(req)).toString('hex')
+        let signed = await scrypta.signMessage(privkey, buf)
+
+        let response = await axios.post('http://localhost:4498/run', { request: signed, address: 'local:' + argv.m })
+        console.log(response.data)
+        process.exit()
     }
+} else if (argv._.indexOf('read') !== -1 && argv.m !== undefined) {
+    let code = false
+    try {
+        code = fs.readFileSync(argv.m)
+    } catch (e) {
+        console.log('Can\'t read code, please make sure path defined in `m` is valid.')
+    }
+    if (code !== false) {
+        let response = await axios.post('http://localhost:4498/read', {
+            address: argv.m,
+            version: 'latest'
+        })
+        console.log(response.data)
+        process.exit()
+    }
+}
 }
 async function publish() {
     return new Promise(async response => {

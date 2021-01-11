@@ -47,7 +47,7 @@ async function runContract(request) {
             scrypta.debug = true
             let result = await vm.run(request.address, request.request, true, 'latest')
             log(result)
-            response(result)
+            response(result.toString())
         }else{
             log(response)
             response('INVALID REQUEST')
