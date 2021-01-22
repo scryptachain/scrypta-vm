@@ -46,11 +46,10 @@ function prepare(toCompile, request = '', local = false, address) {
                         if (local === true) {
                             let MongoClient = require('mongodb').MongoClient
                             MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
-                                var db = client.db(global['db_name'])
                                 if (err) {
-                                    client.close()                                    
                                     response(err)
                                 } else {
+                                    var db = client.db(global['db_name'])
                                     try {
                                         let result = []
                                         if (limit !== undefined) {
@@ -87,12 +86,11 @@ function prepare(toCompile, request = '', local = false, address) {
                             let inserted = false
                             MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
                                 while (!inserted) {
-                                    var db = client.db(global['db_name'])
                                     if (err) {
-                                        client.close()
                                         inserted = true
                                         this.inserted(object)
                                     } else {
+                                        var db = client.db(global['db_name'])
                                         try {
                                             let result = await db.collection(address).insertOne(object, { w: 1, j: true });
                                             inserted = true
@@ -118,13 +116,12 @@ function prepare(toCompile, request = '', local = false, address) {
                             MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
                                 let updated = false
                                 while (!updated) {
-                                    var db = client.db(global['db_name'])
                                     if (err) {
-                                        client.close()
                                         updated = true
                                         this.update(query, object)
                                         response(err)
                                     } else {
+                                        var db = client.db(global['db_name'])
                                         try {
                                             let result = await db.collection(address).updateOne(query, object, { writeConcern: { w: 1, j: true } })
                                             client.close()
@@ -145,11 +142,10 @@ function prepare(toCompile, request = '', local = false, address) {
                         return new Promise(response => {
                             let MongoClient = require('mongodb').MongoClient
                             MongoClient.connect(global['db_url'], global['db_options'], async function (err, client) {
-                                var db = client.db(global['db_name'])
                                 if (err) {
-                                    client.close()
                                     response(err)
                                 } else {
+                                    var db = client.db(global['db_name'])
                                     try {
                                         let result = await db.collection(address).deleteOne(query)
                                         client.close()
