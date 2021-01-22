@@ -53,34 +53,62 @@ async function cli() {
             } else {
                 req = {
                     function: argv.f,
-                    params: { }
+                    params: {}
+                }
             }
+
+            const buf = Buffer.from(JSON.stringify(req)).toString('hex')
+            let signed = await scrypta.signMessage(privkey, buf)
+            let response = await axios.post('http://localhost:4498/run', { request: signed, address: 'local:' + process.cwd() + '/' + argv.m })
+            console.log(response.data)
+            process.exit()
         }
-
-        const buf = Buffer.from(JSON.stringify(req)).toString('hex')
-        let signed = await scrypta.signMessage(privkey, buf)
-
-        let response = await axios.post('http://localhost:4498/run', { request: signed, address: 'local:' + process.cwd() + '/' + argv.m })
-        console.log(response.data)
-        process.exit()
-    }
-} else if (argv._.indexOf('read') !== -1 && argv.m !== undefined) {
-    let code = false
-    try {
-        code = fs.readFileSync(process.cwd() + '/' + argv.m)
-    } catch (e) {
-        console.log('Can\'t read code, please make sure path defined in `m` is valid.')
-    }
-    if (code !== false) {
-        let response = await axios.post('http://localhost:4498/read', {
-            address: process.cwd() + '/' + argv.m,
-            version: 'latest'
+    } else if (argv._.indexOf('read') !== -1 && argv.m !== undefined) {
+        let code = false
+        try {
+            code = fs.readFileSync(process.cwd() + '/' + argv.m)
+        } catch (e) {
+            console.log('Can\'t read code, please make sure path defined in `m` is valid.')
+        }
+        if (code !== false) {
+            let response = await axios.post('http://localhost:4498/read', {
+                address: process.cwd() + '/' + argv.m,
+                version: 'latest'
+            })
+            console.log(response.data)
+            process.exit()
+        }
+    } else if (argv._.indexOf('start') !== -1) {
+        let playgroundPath = __dirname.replace('/src', '/')
+        runScript(playgroundPath + 'playground.js', function (callback) {
+            console.log(callback)
         })
-        console.log(response.data)
-        process.exit()
+    } else if (argv._.indexOf('stop') !== -1) {
+        childProcess.exec('killall node');
     }
 }
+
+function runScript(scriptPath, callback) {
+
+    var invoked = false;
+
+    var process = childProcess.fork(scriptPath);
+
+    process.on('error', function (err) {
+        if (invoked) return;
+        invoked = true;
+        callback(err);
+    });
+
+    process.on('exit', function (code) {
+        if (invoked) return;
+        invoked = true;
+        var err = code === 0 ? null : new Error('exit code ' + code);
+        callback(err);
+    });
+
 }
+
 async function publish() {
     return new Promise(async response => {
         if (argv.m !== undefined && argv.i !== undefined) {
