@@ -20,7 +20,7 @@ async function cli() {
     } else if (argv._.indexOf('test') !== -1 && argv.m !== undefined && argv.f !== undefined) {
         let code = false
         try {
-            code = fs.readFileSync(argv.m)
+            code = fs.readFileSync(process.cwd() + '/' + argv.m)
         } catch (e) {
             console.log('Can\'t read code, please make sure path defined in `m` is valid.')
         }
@@ -60,20 +60,20 @@ async function cli() {
         const buf = Buffer.from(JSON.stringify(req)).toString('hex')
         let signed = await scrypta.signMessage(privkey, buf)
 
-        let response = await axios.post('http://localhost:4498/run', { request: signed, address: 'local:' + argv.m })
+        let response = await axios.post('http://localhost:4498/run', { request: signed, address: 'local:' + process.cwd() + '/' + argv.m })
         console.log(response.data)
         process.exit()
     }
 } else if (argv._.indexOf('read') !== -1 && argv.m !== undefined) {
     let code = false
     try {
-        code = fs.readFileSync(argv.m)
+        code = fs.readFileSync(process.cwd() + '/' + argv.m)
     } catch (e) {
         console.log('Can\'t read code, please make sure path defined in `m` is valid.')
     }
     if (code !== false) {
         let response = await axios.post('http://localhost:4498/read', {
-            address: argv.m,
+            address: process.cwd() + '/' + argv.m,
             version: 'latest'
         })
         console.log(response.data)
@@ -91,7 +91,7 @@ async function publish() {
             let immutable
             let code = false
             try {
-                code = fs.readFileSync(argv.m)
+                code = fs.readFileSync(process.cwd() + '/' + argv.m)
             } catch (e) {
                 console.log('Can\'t read code, please make sure path defined in `m` is valid.')
             }
