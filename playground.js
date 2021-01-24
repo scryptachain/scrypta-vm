@@ -31,6 +31,10 @@ app.post('/run', async (req, res) => {
 
 app.listen(port, () => console.log(`Scrypta playground listening on port ${port}!`))
 
+process.on('message', (m) => {
+    console.log('CHILD got message:', m);
+});
+
 function readContract(request) {
     return new Promise(async response => {
         let result = await vm.read(request.address, true, request.version)
@@ -45,9 +49,14 @@ async function runContract(request) {
         if (request.address !== undefined && request.request !== undefined) {
             scrypta.staticnodes = true
             scrypta.debug = true
-            let result = await vm.run(request.address, request.request, true, 'latest')
-            log(result)
-            response(result.toString())
+            try{
+                let result = await vm.run(request.address, request.request, true, 'latest')
+                log(result)
+                response(result.toString())
+            }catch(e){
+                console.log(e)
+                response('VM ERRORED')
+            }
         }else{
             log(response)
             response('INVALID REQUEST')

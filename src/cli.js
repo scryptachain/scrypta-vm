@@ -82,9 +82,13 @@ async function cli() {
         let playgroundPath = __dirname.replace('/src', '/')
         runScript(playgroundPath + 'playground.js', function (callback) {
             console.log(callback)
+            process.exit()
         })
     } else if (argv._.indexOf('stop') !== -1) {
-        childProcess.exec('killall node');
+        let pid = fs.readFileSync('./scryptavm.pid')
+        fs.unlinkSync('./scryptavm.pid')
+        childProcess.exec('kill ' + pid);
+        process.exit()
     }
 }
 
@@ -93,6 +97,11 @@ function runScript(scriptPath, callback) {
     var invoked = false;
 
     var process = childProcess.fork(scriptPath);
+    try{
+        fs.unlinkSync('./scryptavm.pid')
+    }catch(e){
+    }
+    fs.writeFileSync('./scryptavm.pid', process.pid.toString())
 
     process.on('error', function (err) {
         if (invoked) return;
@@ -103,8 +112,7 @@ function runScript(scriptPath, callback) {
     process.on('exit', function (code) {
         if (invoked) return;
         invoked = true;
-        var err = code === 0 ? null : new Error('exit code ' + code);
-        callback(err);
+        callback('Scrypta Playground server stopping');
     });
 
 }
