@@ -32,11 +32,11 @@ async function test(code, request = '') {
 function prepare(toCompile, request = '', local = false, address) {
     return new Promise(async response => {
         try {
-            
+
             let compiled = false
-            if(toCompile.toString().indexOf('/* Scrypta v0.0.1 */') !== -1){
+            if (toCompile.toString().indexOf('/* Scrypta v0.0.1 */') !== -1) {
                 compiled = await v001.compiler(toCompile.toString().trim(), request, local)
-            }else if(toCompile.toString().indexOf('/* Scrypta v0.0.2 */' !== -1)){
+            } else if (toCompile.toString().indexOf('/* Scrypta v0.0.2 */' !== -1)) {
                 compiled = await v002.compiler(toCompile.toString().trim(), request, local)
             }
 
@@ -294,10 +294,10 @@ function read(address, local = false, version = 'latest') {
                 console.log('Reading local contract.')
                 let toCompile = fs.readFileSync(address)
                 let compiled = false
-                if(toCompile.toString().indexOf('/* Scrypta v0.0.1 */') !== -1){
+                if (toCompile.toString().indexOf('/* Scrypta v0.0.1 */') !== -1) {
                     console.log('Compiling with v0.0.1')
                     compiled = await v001.compiler(toCompile.toString().trim(), '', local)
-                }else if(toCompile.toString().indexOf('/* Scrypta v0.0.2 */' !== -1)){
+                } else if (toCompile.toString().indexOf('/* Scrypta v0.0.2 */' !== -1)) {
                     console.log('Compiling with v0.0.2')
                     compiled = await v002.compiler(toCompile.toString().trim(), '', local)
                 }
@@ -378,11 +378,7 @@ function run(address, request, local = false, version = 'latest') {
                                         if (code[request.message.function] !== undefined) {
                                             try {
                                                 let result = await code[request.message.function](request.message.params)
-                                                try{
-                                                    response(JSON.stringify(result))
-                                                }catch(e){
-                                                    response(result)
-                                                }
+                                                response(result)
                                             } catch (e) {
                                                 response(e)
                                             }
@@ -406,9 +402,9 @@ function run(address, request, local = false, version = 'latest') {
                                 if (code[request.message.function] !== undefined) {
                                     try {
                                         let result = await code[request.message.function](request.message.params)
-                                        try{
+                                        try {
                                             response(JSON.stringify(result))
-                                        }catch(e){
+                                        } catch (e) {
                                             response(result)
                                         }
                                     } catch (e) {
@@ -428,11 +424,7 @@ function run(address, request, local = false, version = 'latest') {
                                 if (code[request.message.function] !== undefined) {
                                     try {
                                         let result = await code[request.message.function](request.message.params)
-                                        try{
-                                            response(JSON.stringify(result))
-                                        }catch(e){
-                                            response(result)
-                                        }
+                                        response(result)
                                     } catch (e) {
                                         response(e)
                                     }
