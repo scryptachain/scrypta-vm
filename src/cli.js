@@ -59,9 +59,18 @@ async function cli() {
 
             const buf = Buffer.from(JSON.stringify(req)).toString('hex')
             let signed = await scrypta.signMessage(privkey, buf)
-            let response = await axios.post('http://localhost:4498/run', { request: signed, address: 'local:' + process.cwd() + '/' + argv.m })
-            console.log(response.data)
-            process.exit()
+            try {
+                let response = await axios.post('http://localhost:4498/run', { request: signed, address: 'local:' + process.cwd() + '/' + argv.m })
+                try{
+                    console.log(JSON.stringify(response.data))
+                }catch(e){
+                    console.log(response.data)
+                }
+                process.exit()
+            }catch(e){
+                console.log('VM PROCESS ERRORED')
+                process.exit()
+            }
         }
     } else if (argv._.indexOf('read') !== -1 && argv.m !== undefined) {
         let code = false
