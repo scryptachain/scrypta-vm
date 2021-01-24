@@ -61,11 +61,7 @@ async function cli() {
             let signed = await scrypta.signMessage(privkey, buf)
             try {
                 let response = await axios.post('http://localhost:4498/run', { request: signed, address: 'local:' + process.cwd() + '/' + argv.m })
-                try{
-                    console.log(JSON.stringify(response.data))
-                }catch(e){
-                    console.log(response.data)
-                }
+                console.log(response.data)
                 process.exit()
             }catch(e){
                 console.log('VM PROCESS ERRORED')

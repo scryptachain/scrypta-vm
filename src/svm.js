@@ -378,7 +378,11 @@ function run(address, request, local = false, version = 'latest') {
                                         if (code[request.message.function] !== undefined) {
                                             try {
                                                 let result = await code[request.message.function](request.message.params)
-                                                response(result)
+                                                try{
+                                                    response(JSON.stringify(result))
+                                                }catch(e){
+                                                    response(result)
+                                                }
                                             } catch (e) {
                                                 response(e)
                                             }
@@ -402,7 +406,11 @@ function run(address, request, local = false, version = 'latest') {
                                 if (code[request.message.function] !== undefined) {
                                     try {
                                         let result = await code[request.message.function](request.message.params)
-                                        response(result)
+                                        try{
+                                            response(JSON.stringify(result))
+                                        }catch(e){
+                                            response(result)
+                                        }
                                     } catch (e) {
                                         response(e)
                                     }
@@ -420,7 +428,11 @@ function run(address, request, local = false, version = 'latest') {
                                 if (code[request.message.function] !== undefined) {
                                     try {
                                         let result = await code[request.message.function](request.message.params)
-                                        response(result)
+                                        try{
+                                            response(JSON.stringify(result))
+                                        }catch(e){
+                                            response(result)
+                                        }
                                     } catch (e) {
                                         response(e)
                                     }
