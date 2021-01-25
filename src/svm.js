@@ -236,7 +236,7 @@ function read(address, local = false, version = 'latest') {
                 scrypta.mainnetIdaNodes = ['http://localhost:3001']
             }
             if (address.indexOf('/') === -1) {
-                console.log('Reading deployed contract.')
+                // console.log('Reading deployed contract.')
                 let contractBlockchain
                 if (local) {
                     contractBlockchain = await returnLocalContract(address)
