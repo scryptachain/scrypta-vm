@@ -32,12 +32,21 @@ async function test(code, request = '') {
 function prepare(toCompile, request = '', local = false, address) {
     return new Promise(async response => {
         try {
+            if (local === true && (address.indexOf('local:') !== -1 || address.indexOf('code:') !== -1)) {
+                const hash = crypto.createHash('sha256').update(address).digest('hex')
+                var temp = new CoinKey(Buffer.from(hash, 'hex'), {
+                    private: 0xae,
+                    public: 0x30,
+                    scripthash: 0x0d
+                })
+                address = temp.publicAddress
+            }
 
             let compiled = false
             if (toCompile.toString().indexOf('/* Scrypta v0.0.1 */') !== -1) {
                 compiled = await v001.compiler(toCompile.toString().trim(), request, local)
             } else if (toCompile.toString().indexOf('/* Scrypta v0.0.2 */' !== -1)) {
-                compiled = await v002.compiler(toCompile.toString().trim(), request, local)
+                compiled = await v002.compiler(toCompile.toString().trim(), request, local, address)
             }
 
             const dbMock = {
@@ -161,15 +170,6 @@ function prepare(toCompile, request = '', local = false, address) {
             }
 
             if (compiled !== false) {
-                if (local === true && (address.indexOf('local:') !== -1 || address.indexOf('code:') !== -1)) {
-                    const hash = crypto.createHash('sha256').update(address).digest('hex')
-                    var temp = new CoinKey(Buffer.from(hash, 'hex'), {
-                        private: 0xae,
-                        public: 0x30,
-                        scripthash: 0x0d
-                    })
-                    address = temp.publicAddress
-                }
                 let vm = new NodeVM({
                     console: 'inherit',
                     require: {
@@ -276,7 +276,14 @@ function read(address, local = false, version = 'latest') {
                     let contract = JSON.parse(data.message)
                     if (verify !== false) {
                         let toCompile = compressor.decompress(contract.code, { inputEncoding: 'Base64' })
-                        let compiled = await v001.compiler(toCompile.toString().trim(), '', local)
+                        let compiled = false
+                        
+                        if (toCompile.toString().indexOf('/* Scrypta v0.0.1 */') !== -1) {
+                            compiled = await v001.compiler(toCompile.toString().trim(), request, local)
+                        } else if (toCompile.toString().indexOf('/* Scrypta v0.0.2 */' !== -1)) {
+                            compiled = await v002.compiler(toCompile.toString().trim(), request, local, address)
+                        }
+
                         if (compiled !== false) {
                             contract.functions = compiled.functions
                             contract.code = compiled.code
@@ -299,7 +306,7 @@ function read(address, local = false, version = 'latest') {
                     compiled = await v001.compiler(toCompile.toString().trim(), '', local)
                 } else if (toCompile.toString().indexOf('/* Scrypta v0.0.2 */' !== -1)) {
                     console.log('Compiling with v0.0.2')
-                    compiled = await v002.compiler(toCompile.toString().trim(), '', local)
+                    compiled = await v002.compiler(toCompile.toString().trim(), '', local, address)
                 }
                 if (compiled !== false) {
                     console.log('Compilation done, returning contract')
