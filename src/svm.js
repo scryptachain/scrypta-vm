@@ -279,9 +279,9 @@ function read(address, local = false, version = 'latest') {
                         let compiled = false
                         
                         if (toCompile.toString().indexOf('/* Scrypta v0.0.1 */') !== -1) {
-                            compiled = await v001.compiler(toCompile.toString().trim(), request, local)
+                            compiled = await v001.compiler(toCompile.toString().trim(), "", local)
                         } else if (toCompile.toString().indexOf('/* Scrypta v0.0.2 */' !== -1)) {
-                            compiled = await v002.compiler(toCompile.toString().trim(), request, local, address)
+                            compiled = await v002.compiler(toCompile.toString().trim(), "", local, address)
                         }
 
                         if (compiled !== false) {
@@ -335,7 +335,7 @@ function run(address, request, local = false, version = 'latest') {
             if (request.signature !== undefined && request.message !== undefined && request.pubkey !== undefined) {
                 let validateRequest = await scrypta.verifyMessage(request.pubkey, request.signature, request.message)
                 if (validateRequest !== false) {
-                    console.log('REQUEST IS VALID.')
+                    // console.log('REQUEST IS VALID.')
                     try {
                         request.message = JSON.parse(JSON.parse(Buffer.from(request.message, 'hex').toString('utf8')))
                     } catch (e) {
