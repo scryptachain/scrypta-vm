@@ -116,7 +116,7 @@ async function cli() {
         console.log('BALANCE ADDRESS IS: ' + balance.balance)
         if(balance.balance >= 0.001){
             let sid = await scrypta.buildWallet('TEMPORARY', address, { prv: identity, key: pubkey }, false)
-            let written = await scrypta.write(sid, 'TEMPORARY', argv.c, '', '', 'unpin://')
+            let written = await scrypta.write(sid, 'TEMPORARY', argv.c, '', pubkey, 'unpin://')
             console.log('WRITTEN RESULT IS ' + JSON.stringify(written))
         }
         process.exit()
