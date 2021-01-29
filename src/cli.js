@@ -94,7 +94,7 @@ async function cli() {
         fs.unlinkSync('./scryptavm.pid')
         childProcess.exec('kill ' + pid);
         process.exit()
-    } else if (argv._.indexOf('pin') !== -1 && argv.c !== undefined && argv.i !== undefined && argv.p !== undefined) {
+    } else if (argv._.indexOf('pin') !== -1 && argv.c !== undefined && argv.i !== undefined) {
         let identity = argv.i
         let pubkey = await scrypta.getPublicKey(identity)
         let address = await scrypta.getAddressFromPubKey(pubkey)
@@ -103,7 +103,7 @@ async function cli() {
         console.log('BALANCE ADDRESS IS: ' + balance.balance)
         if(balance.balance >= 0.001){
             let sid = await scrypta.buildWallet('TEMPORARY', address, { prv: identity, key: pubkey }, false)
-            let written = await scrypta.write(sid, 'TEMPORARY', argv.c, '', argv.p, 'pin://')
+            let written = await scrypta.write(sid, 'TEMPORARY', argv.c, '', pubkey, 'pin://')
             console.log('WRITTEN RESULT IS ' + JSON.stringify(written))
         }
         process.exit()
