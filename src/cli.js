@@ -63,7 +63,7 @@ async function cli() {
                 let response = await axios.post('http://localhost:4498/run', { request: signed, address: 'local:' + process.cwd() + '/' + argv.m })
                 console.log(response.data)
                 process.exit()
-            }catch(e){
+            } catch (e) {
                 console.log('VM PROCESS ERRORED')
                 process.exit()
             }
@@ -94,6 +94,30 @@ async function cli() {
         fs.unlinkSync('./scryptavm.pid')
         childProcess.exec('kill ' + pid);
         process.exit()
+    } else if (argv._.indexOf('pin') !== -1 && argv.c !== undefined && argv.i !== undefined) {
+        let identity = argv.i
+        let pubkey = await scrypta.getPublicKey(identity)
+        let address = await scrypta.getAddressFromPubKey(pubkey)
+
+        let balance = await scrypta.get('/balance/' + address)
+        console.log('BALANCE ADDRESS IS: ' + balance.balance)
+        if(balance.balance >= 0.001){
+            let sid = await scrypta.buildWallet('TEMPORARY', address, { prv: identity, key: pubkey }, false)
+            let written = await scrypta.write(sid, 'TEMPORARY', argv.c, '', '', 'pin://')
+            console.log('WRITTEN RESULT IS ' + JSON.stringify(written))
+        }
+    } else if (argv._.indexOf('unpin') !== -1 && argv.c !== undefined && argv.i !== undefined) {
+        let identity = argv.i
+        let pubkey = await scrypta.getPublicKey(identity)
+        let address = await scrypta.getAddressFromPubKey(pubkey)
+
+        let balance = await scrypta.get('/balance/' + address)
+        console.log('BALANCE ADDRESS IS: ' + balance.balance)
+        if(balance.balance >= 0.001){
+            let sid = await scrypta.buildWallet('TEMPORARY', address, { prv: identity, key: pubkey }, false)
+            let written = await scrypta.write(sid, 'TEMPORARY', argv.c, '', '', 'unpin://')
+            console.log('WRITTEN RESULT IS ' + JSON.stringify(written))
+        }
     }
 }
 
@@ -102,9 +126,9 @@ function runScript(scriptPath, callback) {
     var invoked = false;
 
     var process = childProcess.fork(scriptPath);
-    try{
+    try {
         fs.unlinkSync('./scryptavm.pid')
-    }catch(e){
+    } catch (e) {
     }
     fs.writeFileSync('./scryptavm.pid', process.pid.toString())
 
